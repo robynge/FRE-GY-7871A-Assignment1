@@ -20,3 +20,9 @@ outputs/*
 # Instructor-built data archive, distributed as a GitHub Release asset
 ark_filings_*.tar.gz
 download.log
+
+# Only share the report and figure for the original assignment date window.
+!outputs/course_2021_2025/
+outputs/course_2021_2025/*
+!outputs/course_2021_2025/report.pdf
+!outputs/course_2021_2025/figure1.png

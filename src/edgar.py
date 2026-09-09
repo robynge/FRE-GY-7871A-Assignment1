@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import hashlib
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -21,6 +22,7 @@ from .config import (
     FILING_DIR,
     SEC_MAX_REQUESTS_PER_SEC,
     SEC_USER_AGENT,
+    AS_OF_DATE,
 )
 
 _SUBMISSIONS = "https://data.sec.gov/submissions/CIK{cik}.json"
@@ -50,7 +52,8 @@ class EdgarClient:
     # -- low level -----------------------------------------------------------
     def _get(self, url: str, timeout: int = 60) -> requests.Response:
         cache = self.cache_dir / "metadata" / (hashlib.sha256(url.encode()).hexdigest() + ".json")
-        if url.endswith(".json") and cache.exists():
+        fresh = cache.exists() and datetime.fromtimestamp(cache.stat().st_mtime, timezone.utc).date().isoformat() >= AS_OF_DATE
+        if url.endswith(".json") and fresh:
             response = requests.Response()
             response.status_code = 200
             response._content = cache.read_bytes()

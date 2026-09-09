@@ -153,7 +153,7 @@ def trend_tests(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def outcome_tests(df: pd.DataFrame) -> pd.DataFrame:
+def outcome_tests(df: pd.DataFrame, kind=None) -> pd.DataFrame:
     """Tone coefficients for volatility and sentiment-return regressions.
 
     For each uncertainty measure, both volatility models use complete cases including
@@ -162,7 +162,7 @@ def outcome_tests(df: pd.DataFrame) -> pd.DataFrame:
     Each specification reports firm and two-way clustered inference separately.
     """
     rows = []
-    for tone in ["Uncertainty_prop", "Uncertainty_tfidf"]:
+    for tone in (["Uncertainty_prop", "Uncertainty_tfidf"] if kind != "return" else []):
         data = _complete(df, [tone, "post_vol", "pre_vol"] + CONTROLS,
                          ["cik", "quarter", "form"])
         for include_pre in [False, True]:
@@ -173,7 +173,7 @@ def outcome_tests(df: pd.DataFrame) -> pd.DataFrame:
                                 True, tone, name, inference)
                 row["measure"] = tone
                 rows.append(row)
-    for tone in ["Negative_prop", "Negative_tfidf"]:
+    for tone in (["Negative_prop", "Negative_tfidf"] if kind != "volatility" else []):
         data = _complete(df, [tone, "event_excess", "pre_vol"] + CONTROLS,
                          ["cik", "quarter", "form"])
         for inference in ["firm_cluster", "firm_quarter_cluster"]:

@@ -2,7 +2,7 @@
 
 Everything you need comes from one file, the Loughran-McDonald Master Dictionary:
 
-    Negative      Fin-Neg, 2,355 words. How bad the news is.
+    Negative      Fin-Neg, 2,345 active words in the March 2026 release.
     Uncertainty   Fin-Unc,   297 words. How sure management is.
     Positive, Litigious, Strong_Modal, Weak_Modal  -- available, not required.
 
@@ -35,13 +35,14 @@ def load_master_dictionary(path: Path | None = None) -> pd.DataFrame:
 def lm_word_lists(master: pd.DataFrame | None = None) -> dict[str, set[str]]:
     """{'Negative': {...}, 'Positive': {...}, ...} from the master dictionary.
 
-    A non-zero entry in a category column is the year the word entered that
-    category, so 'non-zero' means 'is in the list'.
+    Positive years denote active membership; negative years denote removal.
+    The March 2026 release contains 2,345 active negative and 297 uncertainty
+    words. Removed entries are excluded even if older course counts include them.
     """
     master = master if master is not None else load_master_dictionary()
     out = {}
     for cat in LM_CATEGORIES:
-        out[cat] = set(master.loc[master[cat].fillna(0) != 0, "Word"])
+        out[cat] = set(master.loc[master[cat].fillna(0) > 0, "Word"])
     return out
 
 

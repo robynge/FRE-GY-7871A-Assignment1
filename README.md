@@ -1,60 +1,57 @@
 # Uncertainty and sentiment in SEC filings
 
-FRE-GY 7871 A · Assignment 1 · 2021–2025
+FRE-GY 7871 A · Assignment 1 and current-period extension
 
-Open [analysis.ipynb](analysis.ipynb) for saved results and reproducible analysis, [REPORT.md](REPORT.md) for the report text, or [the PDF](outputs/report.pdf). [AI_USE.md](AI_USE.md) discloses AI assistance.
+The main analysis covers filing dates January 1, 2021–September 9, 2026. The original assignment explicitly requests 2021–2025; that period is also recomputed with the same active dictionaries and supplied as a separate comparison.
 
-The analysis uses Loughran–McDonald negative and uncertainty dictionaries, proportional and equation (1) weights, NYSE trading-day event windows, and company/quarter-aware inference. Negative sentiment and uncertainty remain separate throughout.
+- [Executed notebook](analysis.ipynb)
+- [Current-period report](REPORT.md) · [PDF](outputs/report.pdf)
+- [2021–2025 course-period report](COURSE_REPORT.md) · [PDF](outputs/course_2021_2025/report.pdf)
+- [AI assistance disclosure](AI_USE.md)
+
+The analysis uses the official Loughran–McDonald Master Dictionary, 1993–2025 release, updated March 2026. Only positive category flags are included: **2,345 active negative words and 297 uncertainty words**. Negative year flags identify removed words and are excluded. Including the ten removed entries reproduces the assignment's count of 2,355; the analysis instead uses only current active entries. Dictionary proportions and equation (1) weights are computed separately for sentiment and uncertainty.
 
 ## Reproduce
 
-Python 3.11 is supported. Create an isolated environment, activate it, then install dependencies:
+Python 3.11 is supported. Create an isolated environment and install the recorded dependency versions:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-versions.txt
 ```
 
-The exact versions used for the submitted run are recorded in `requirements-versions.txt` and can be installed with the same `-r` option.
-
-SEC requires a contact identity. Set `SEC_USER_AGENT` to your existing genuine contact string, or use an already configured `EDGAR_IDENTITY`; the code accepts either. Never commit that identity or credentials.
+SEC requests use the existing genuine contact string in `SEC_USER_AGENT` or `EDGAR_IDENTITY`. Never commit that identity or credentials. Then run:
 
 ```bash
 python scripts/00_get_holdings.py
 python scripts/00_get_lexicons.py
 python scripts/01_build_universe.py
-python scripts/02_download_filings.py --limit 3
 python scripts/02_download_filings.py
 python scripts/03_get_market_data.py
 python scripts/06_survivorship.py
 python -m pytest -q
 python scripts/05_notebook.py
 python scripts/07_report.py
+python scripts/07_report.py --output-dir outputs/course_2021_2025 --report-path COURSE_REPORT.md
 ```
 
-The notebook recomputes the analysis and saves all outputs. To calculate exhibits without executing the notebook, run `python scripts/04_analyze.py`. Optional `03_prefetch_shares.py` preloads company facts while the main corpus downloads; rerun `03_get_market_data.py` once all original documents are available for cover-page fallbacks.
+The notebook computes both date windows and saves its aggregate outputs. To compute the exhibits without notebook execution, use `python scripts/04_analyze.py`. SEC metadata are refreshed when older than the configured retrieval date; unchanged original documents are reused. Historical holdings comparisons use the GitHub CLI (`gh`).
 
-The historical holdings comparison uses the GitHub CLI (`gh`) and the public `robynge/ark-routine` repository. The primary classroom snapshot is retrieved from a pinned upstream commit and checked against its SHA-256 checksum. No data files are distributed here.
+## Samples and timing
 
-## Sample and methods
+Every successfully parsed original filing receives four scores before analysis filters. Descriptive statistics and trends use the eligible text sample, after minimum-word and earliest-company-quarter filters. Return regressions use their own complete four-session outcome sample. The paired volatility regressions use an identical sample with complete post-filing volatility and controls, with and without the pre-filing volatility regressor. Each estimation sample refits document frequencies.
 
-- The fixed classroom snapshot contains 130 raw holding tickers, with January 2 and September 4, 2026 dates. It is not silently replaced by current holdings.
-- Preserve non-company securities, foreign local listings, unresolved identifiers, foreign reporting forms, and later filers in the universe audit. Combine company CIKs before downloading.
-- Preserve amendments, parse failures and acquisition failures in an accession-level manifest. Stop visibly on repeated download failure.
-- Keep visible inline-XBRL text; discard hidden scaffolding and numeric-heavy tables. Downloads and parsing are cached and checkpointed.
-- Apply the assignment filters in order. Additional full-window, cover-share and liquidity exclusions are explicit. Every reported regression sample refits its own document frequencies.
-- Convert acceptance timestamps to Eastern, apply the 16:00 cutoff, and use an exchange calendar. Missing returns are never forward filled.
-- Separate nominal prices/volumes for size and liquidity from adjusted prices for total returns. Use only accession-matched cover-page outstanding shares, with strict tagged multi-class extraction when needed.
-- Annual trend slopes use seasonal controls and company effects; aggregate inference includes OLS and Newey–West with four lags. Outcome models include company and calendar-quarter effects. Company-only and two-way clustered results are retained.
-- The paired volatility models share observations. Return tests report approximate 80% minimum detectable effects; no significance threshold is used to select which models are retained.
+Latest filings remain in the text sample when their future market windows are not yet observable. Missing future returns are never filled or extrapolated. Market data include complete daily closes through September 8, 2026. The 2026 third quarter is incomplete. Tables report separate sample attrition and the figure identifies sparse annual-report quarters.
 
-All downloaded inputs, observation-level results, logs and runtime files stay under ignored local data/output directories. The submitted report and figure are permitted output artifacts.
+Day 0 uses the later of the SEC filing date and the acceptance date, shifts after the actual NYSE session close (including early closes), and aligns to the next trading session. Returns use adjusted closes; size and dollar volume use nominal prices and volumes reconstructed from corporate actions. Outstanding shares must match the scored filing's accession and cover-page date.
 
-## Provenance
+Aggregate trend inference includes Newey–West with four lags. Within-company trends include company and seasonal effects; outcome models include company and calendar-quarter effects. Company and two-way company/quarter clustered inference are retained. No winsorisation or significance-based model selection is applied.
 
-Course starter: [anmolsingh0219/FRE-GY-7871A-Assignment1](https://github.com/anmolsingh0219/FRE-GY-7871A-Assignment1), commit `532c65cf91cdf62a8d37c9bbe6ff0961c152d756`.
+## Sources and scope
 
-Method: Loughran and McDonald (2011), [Journal of Finance 66(1), 35–65](https://doi.org/10.1111/j.1540-6261.2010.01625.x). Dictionary: [Notre Dame Software Repository for Accounting and Finance](https://sraf.nd.edu/loughranmcdonald-master-dictionary/). Filings and facts: SEC EDGAR. Prices, volume and VIX: Yahoo Finance via yfinance.
+The frozen course holdings snapshot is retrieved from [the instructor repository](https://github.com/anmolsingh0219/FRE-GY-7871A-Assignment1), commit `532c65cf91cdf62a8d37c9bbe6ff0961c152d756`, with a checksum check. The same holdings selection supports both filing windows. ARKF/ARKX holdings are dated January 2, 2026 and the other four funds September 4, 2026; company eligibility is evaluated within the selected filing period.
 
-These are retrospective conditional associations. Current-holdings selection, firm identity changes, template reuse, earnings-event overlap and only 20 quarterly clusters limit interpretation. Full-sample word weights are not an out-of-sample trading signal.
+Method: Loughran and McDonald (2011), [Journal of Finance 66(1), 35–65](https://doi.org/10.1111/j.1540-6261.2010.01625.x). Dictionary version and removal-flag semantics: [Notre Dame official source](https://sraf.nd.edu/loughranmcdonald-master-dictionary/). Filings and company facts: SEC EDGAR. Prices, volume and VIX: Yahoo Finance via yfinance.
+
+Downloaded data, filing-level scores, logs and caches are excluded from Git. Reports, figures, code, tests and aggregate notebook outputs are provided. These are retrospective conditional associations; holdings selection, unbalanced reporting quarters, template language and overlap with earnings news limit interpretation. Full-corpus weights use later documents and are not a real-time forecasting procedure.

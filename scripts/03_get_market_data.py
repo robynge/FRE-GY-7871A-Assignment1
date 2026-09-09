@@ -30,7 +30,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.config import (  # noqa: E402
     ALT_BENCHMARK, BENCHMARK, INTERIM_DIR, PRICE_DIR, SAMPLE_END, SAMPLE_START,
-    SEC_USER_AGENT, VIX_TICKER, FILING_DIR,
+    SEC_USER_AGENT, VIX_TICKER, FILING_DIR, MARKET_END,
 )
 from src.edgar import EdgarClient  # noqa: E402
 from src.market import download_market_data  # noqa: E402
@@ -42,7 +42,7 @@ FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
 # different quantity and cannot substitute for shares outstanding.
 SHARE_TAGS = [("dei", "EntityCommonStockSharesOutstanding")]
 PRICE_START = "2020-09-01"
-PRICE_END = "2026-05-01"  # exclusive; supports +63 sessions after December filings
+PRICE_END = MARKET_END  # exclusive; unfinished outcome windows remain missing
 
 
 def select_cover_shares(facts: dict, accession: str, filing_date) -> dict:

@@ -102,3 +102,15 @@ def test_completed_acquisition_allows_parse_failure_and_amendment_exclusions(sam
     assert audit["parse_failures"] == 1
     assert audit["amendments"] == 1
     assert waterfall.loc[waterfall["filter"].eq("Remove amendments and parse failures"), "removed"].item() == 2
+
+
+def test_recent_filing_stays_in_text_and_return_samples(sample_files):
+    records = [filing('recent',when='2026-04-01')]
+    write_inputs(sample_files, records, {'0000000001':1})
+    write_market(sample_files, records)
+    parsed,text,vol,ret,waterfall,audit = analysis._prepare_samples()
+    assert parsed.accession.tolist() == text.accession.tolist() == ret.accession.tolist() == ['recent']
+    assert vol.empty
+    assert audit['return_filings'] == 1 and audit['volatility_filings'] == 0
+    removed = waterfall[(waterfall['sample']=='Volatility') & (waterfall['filter']=='Outcome window elapsed by market cutoff')]
+    assert removed.removed.item() == 1

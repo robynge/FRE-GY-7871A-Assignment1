@@ -39,7 +39,10 @@ SEC_MAX_REQUESTS_PER_SEC = 6.0  # below the SEC's limit of 10, on purpose
 ARK_FUNDS = ["ARKK", "ARKQ", "ARKW", "ARKF", "ARKG", "ARKX"]
 
 SAMPLE_START = "2021-01-01"          # filing date, inclusive
-SAMPLE_END = "2025-12-31"            # filing date, inclusive
+SAMPLE_END = "2026-09-09"            # filing date, inclusive; incomplete current quarter
+COURSE_SAMPLE_END = "2025-12-31"     # original assignment window, retained as a comparison
+AS_OF_DATE = "2026-09-09"            # retrieval cutoff for this reproducible run
+MARKET_END = "2026-09-09"            # exclusive: completed daily closes through September 8
 FORMS = ["10-K", "10-Q"]             # amendments (10-K/A, 10-Q/A) are excluded
 
 # Series downloaded alongside the filers, for you to use as benchmarks.

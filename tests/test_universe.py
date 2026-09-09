@@ -52,10 +52,10 @@ class UniverseTests(unittest.TestCase):
         foreign = pd.DataFrame([dict(form="20-F", filingDate="2024-03-01")])
         self.assertEqual(u.classify_no10x(foreign)[0], "foreign_reporting_forms")
         recent = pd.DataFrame([dict(form="S-1", filingDate="2024-03-01"),
-                               dict(form="10-Q", filingDate="2026-05-08")])
+                               dict(form="10-Q", filingDate="2027-05-08")])
         category, reason = u.classify_no10x(recent)
         self.assertEqual(category, "first_10x_after_sample")
-        self.assertIn("2026-05-08", reason)
+        self.assertIn("2027-05-08", reason)
         self.assertEqual(u.classify_no10x(pd.DataFrame())[0], "no_report_evidence")
 
     def test_comparison_excludes_untickered_and_footer_rows(self):

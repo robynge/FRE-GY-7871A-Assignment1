@@ -5,9 +5,9 @@ from src.events import align_day_zero, event_variables
 
 def test_close_cutoff_utc_dst_and_weekend():
     calendar = pd.to_datetime(["2025-07-03", "2025-07-07", "2025-07-08"])
-    # July 4 holiday and weekend are absent from the exchange calendar.
-    assert align_day_zero("2025-07-03", "2025-07-03T19:59:59Z", calendar)[0] == calendar[0]
-    assert align_day_zero("2025-07-03", "2025-07-03T20:00:00Z", calendar) == (calendar[1], True)
+    # July 3 closes at 13:00 Eastern; July 4 and the weekend are absent.
+    assert align_day_zero("2025-07-03", "2025-07-03T16:59:59Z", calendar)[0] == calendar[0]
+    assert align_day_zero("2025-07-03", "2025-07-03T17:00:00Z", calendar) == (calendar[1], True)
     assert pd.isna(align_day_zero("2025-07-03", None, calendar)[0])
 
 
@@ -47,3 +47,13 @@ def test_sixty_after_passes_history_but_not_complete_volatility_window():
     out = event_variables(f,p,p,p,p,1000)
     assert out["valid_history"]
     assert not out["complete_windows"]
+
+
+def test_recent_filing_return_is_available_without_future_volatility():
+    cal = pd.bdate_range("2024-01-01", periods=100)
+    p = pd.Series(10*1.01**np.arange(100), index=cal)
+    f = {"filing_date":cal[80],"acceptance_datetime":str(cal[80].date())+"T15:00:00Z"}
+    out = event_variables(f,p,p,p,p,1000)
+    assert out["valid_pre_history"] and out["complete_return"]
+    assert np.isfinite(out["event_excess"])
+    assert not out["complete_volatility"] and np.isnan(out["post_vol"])

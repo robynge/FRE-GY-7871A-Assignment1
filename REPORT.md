@@ -1,14 +1,20 @@
 # Uncertainty and sentiment in financial reports
 
-FRE-GY 7871 A · NLP and the Investment Process · Filing dates 2021–2025
+FRE-GY 7871 A · NLP and the Investment Process · Filing dates 2021-01-01 to 2026-09-09
 
-GitHub: https://github.com/robynge/FRE-GY-7871A-Assignment1
+[Research repository](https://github.com/robynge/FRE-GY-7871A-Assignment1)
 
-1,437 filings from 84 companies enter the common analysis sample. Negative-word frequency measures adverse language; uncertainty-word frequency measures imprecision and hedging. The tests examine changes within companies, subsequent realised volatility and four-session excess returns around filing.
+1,935 filings from 97 companies enter the text analysis. The volatility analysis uses 1,600 filings and the return analysis uses 1,682. Negative words measure adverse language; uncertainty words measure imprecision and hedging. All results describe associations in companies selected from ARK holdings.
+
+Within companies, annual-report negative-word shares change by +0.062 percentage points per year (p < 0.001); quarterly-report uncertainty changes by -0.015 points (p = 0.126). After controlling for prior volatility, 1 of 6 uncertainty specifications are significant at 5%. The pooled negative-tone return estimate is not significant at 5% (p = 0.352).
+
+Filing coverage ends on 2026-09-09; market observations end on 2026-09-08. Recent filings remain in text analysis even when their future price windows are unavailable. Return and volatility samples are filtered separately; both volatility specifications use the same observations. The latest included filings are 2026-09-02 for returns and 2026-06-05 for volatility.
+
+The final calendar quarter is incomplete as of 2026-09-09. Its filing counts, tone averages and VIX average are partial-quarter observations; they should not be compared with completed quarters as if coverage were equal.
 
 ## Table 1. Sample construction
 
-Panel A counts holding identifiers, then companies. The frozen six-fund snapshot contains 130 raw tickers, rather than the approximately 124 companies in the assignment description. ARKF and ARKX are dated January 2, 2026; the other four funds are dated September 4, 2026. The separate September 4 holdings snapshot contains 121 raw tickers. The frozen classroom sample is retained; different share classes are combined by SEC company identifier.
+Panel A counts holding identifiers, then companies. The frozen six-fund holdings use January 2, 2026 for ARKF and ARKX and September 4, 2026 for the other four funds. Different share classes are combined by SEC company identifier. The holdings dates define a retrospective company universe.
 
 | Company/security filter              | Removed   | Remaining   | Unit        |
 |:-------------------------------------|:----------|:------------|:------------|
@@ -17,212 +23,283 @@ Panel A counts holding identifiers, then companies. The frozen six-fund snapshot
 | Foreign local listings               | 8         | 118         | identifiers |
 | Unresolved SEC identifiers           | 3         | 115         | identifiers |
 | Combine share classes by company CIK | 1         | 114         | companies   |
-| First 10-K/Q after 2025              | 6         | 108         | companies   |
-| 20-F / 40-F reporting companies      | 17        | 91          | companies   |
+| 20-F / 40-F reporting companies      | 17        | 97          | companies   |
 
-Panel B counts filings. Company exclusions above have no observed 10-K/Q count to subtract from this panel.
+Panel B — Text sample. Counts follow this panel’s filter order.
+
+| Filing filter                        | Removed   | Remaining   | Companies   |
+|:-------------------------------------|:----------|:------------|:------------|
+| All 10-K/Q and amendments            | 0         | 2,001       | 97          |
+| Remove amendments and parse failures | 58        | 1,943       | 97          |
+| Minimum words: 2,000 K / 1,000 Q     | 0         | 1,943       | 97          |
+| Earliest company filing each quarter | 8         | 1,935       | 97          |
+
+Panel B — Volatility sample. Counts follow this panel’s filter order.
 
 | Filing filter                            | Removed   | Remaining   | Companies   |
 |:-----------------------------------------|:----------|:------------|:------------|
-| All 10-K/Q and amendments                | 0         | 1,709       | 91          |
-| Remove amendments and parse failures     | 46        | 1,663       | 91          |
-| Minimum words: 2,000 K / 1,000 Q         | 0         | 1,663       | 91          |
-| Earliest company filing each quarter     | 8         | 1,655       | 91          |
-| Usable day 0 and prior price at least $3 | 108       | 1,547       | 91          |
-| 60 observed returns before and after     | 23        | 1,524       | 90          |
-| Complete event and volatility windows    | 0         | 1,524       | 90          |
-| Accession-matched outstanding shares     | 70        | 1,454       | 85          |
-| Complete liquidity and model controls    | 17        | 1,437       | 84          |
+| Eligible text filings                    | 0         | 1,935       | 97          |
+| Usable day 0 and prior price at least $3 | 117       | 1,818       | 97          |
+| Outcome window elapsed by market cutoff  | 94        | 1,724       | 94          |
+| 60 observed returns before and after     | 26        | 1,698       | 91          |
+| Complete pre/post volatility windows     | 0         | 1,698       | 91          |
+| Accession-matched outstanding shares     | 81        | 1,617       | 87          |
+| Complete liquidity and model controls    | 17        | 1,600       | 87          |
 
-46 amendments and 0 parse failures are recorded. The acceptance-time rule moves 938 events before market filters and 789 in the final sample. All models use the same complete observations within each stated sample.
+Panel B — Return sample. Counts follow this panel’s filter order.
+
+| Filing filter                            | Removed   | Remaining   | Companies   |
+|:-----------------------------------------|:----------|:------------|:------------|
+| Eligible text filings                    | 0         | 1,935       | 97          |
+| Usable day 0 and prior price at least $3 | 117       | 1,818       | 97          |
+| Outcome window elapsed by market cutoff  | 3         | 1,815       | 96          |
+| 60 observed returns before filing        | 28        | 1,787       | 95          |
+| Complete four-session return window      | 0         | 1,787       | 95          |
+| Accession-matched outstanding shares     | 88        | 1,699       | 91          |
+| Complete liquidity and model controls    | 17        | 1,682       | 91          |
+
+58 amendments and 0 parse failures are recorded. All 1,943 successfully parsed original filings receive tone scores before analytical sample restrictions. Market-data restrictions do not determine the text sample.
 
 ## Table 2. Tone by report type
 
-Proportional scores are percentages; weighted scores are equation (1) sums. Document frequencies are fitted separately within each form here, in Figure 1 and in form-specific regressions. Full-sample regressions fit the pooled corpus.
+The text sample determines descriptive statistics and trends. Proportional scores are percentages; weighted scores are equation (1) sums. Document frequencies are fitted within each analytical sample and separately by report type.
 
 | Form   | Measure               | N     | Mean    | SD     | P25    | Median   | P75     |
 |:-------|:----------------------|:------|:--------|:-------|:-------|:---------|:--------|
-| 10-K   | Negative words (%)    | 349   | 2.321   | 0.401  | 2.067  | 2.348    | 2.580   |
-| 10-K   | Uncertainty words (%) | 349   | 1.939   | 0.243  | 1.794  | 1.968    | 2.118   |
-| 10-K   | Negative tf.idf       | 349   | 100.634 | 38.306 | 71.369 | 92.346   | 127.874 |
-| 10-K   | Uncertainty tf.idf    | 349   | 15.788  | 5.821  | 11.705 | 14.647   | 18.971  |
-| 10-Q   | Negative words (%)    | 1,088 | 2.118   | 0.942  | 1.260  | 1.970    | 2.994   |
-| 10-Q   | Uncertainty words (%) | 1,088 | 1.817   | 0.581  | 1.326  | 1.664    | 2.408   |
-| 10-Q   | Negative tf.idf       | 1,088 | 92.773  | 76.745 | 28.443 | 64.511   | 148.036 |
-| 10-Q   | Uncertainty tf.idf    | 1,088 | 15.827  | 8.462  | 9.274  | 14.092   | 21.343  |
+| 10-K   | Negative words (%)    | 489   | 2.298   | 0.420  | 2.013  | 2.310    | 2.581   |
+| 10-K   | Uncertainty words (%) | 489   | 1.963   | 0.242  | 1.821  | 1.979    | 2.132   |
+| 10-K   | Negative tf.idf       | 489   | 100.784 | 36.898 | 71.619 | 93.659   | 128.697 |
+| 10-K   | Uncertainty tf.idf    | 489   | 15.868  | 5.666  | 11.958 | 15.010   | 18.943  |
+| 10-Q   | Negative words (%)    | 1,446 | 2.049   | 0.972  | 1.177  | 1.809    | 2.983   |
+| 10-Q   | Uncertainty words (%) | 1,446 | 1.820   | 0.587  | 1.321  | 1.652    | 2.415   |
+| 10-Q   | Negative tf.idf       | 1,446 | 93.057  | 79.238 | 26.665 | 59.411   | 156.314 |
+| 10-Q   | Uncertainty tf.idf    | 1,446 | 15.951  | 8.621  | 8.952  | 13.989   | 22.347  |
 
-Sentiment/uncertainty correlations (proportional, weighted): 10-K: 0.724, 0.838; 10-Q: 0.839, 0.922.
+Negative/uncertainty correlations (proportional, weighted): All: 0.849, 0.917; 10-K: 0.720, 0.823; 10-Q: 0.854, 0.923.
 
 ## Table 3. Most frequent dictionary words
 
-Each percentage divides a word count by the total token count in that dictionary category across the final sample.
+Each percentage divides a word count by all token occurrences in its dictionary category across the text sample.
 
 | Rank   | Negative word   | Share %   | Uncertainty word   | Share %    |
 |:-------|:----------------|:----------|:-------------------|:-----------|
-| 1      | LOSS            | 5.138     | MAY                | 34.642     |
-| 2      | ADVERSELY       | 3.934     | COULD              | 18.251     |
-| 3      | LOSSES          | 3.218     | RISK               | 5.124      |
-| 4      | CLAIMS          | 2.925     | RISKS              | 4.529      |
-| 5      | ADVERSE         | 2.757     | BELIEVE            | 2.925      |
-| 6      | AGAINST         | 2.427     | APPROXIMATELY      | 2.690      |
-| 7      | LITIGATION      | 1.953     | ASSUMPTIONS        | 1.919      |
-| 8      | UNABLE          | 1.932     | INTANGIBLE         | 1.759      |
-| 9      | HARM            | 1.902     | POSSIBLE           | 1.276      |
-| 10     | FAILURE         | 1.773     | UNCERTAINTIES      | 1.163      |
-| 11     | FAIL            | 1.306     | FLUCTUATIONS       | 1.143      |
-| 12     | IMPAIRMENT      | 1.256     | MIGHT              | 1.124      |
-| 13     | NEGATIVELY      | 1.150     | UNCERTAIN          | 1.034      |
-| 14     | PENALTIES       | 1.141     | ANTICIPATED        | 0.978      |
-| 15     | DIFFICULT       | 1.129     | VOLATILITY         | 0.961      |
-| 16     | CRITICAL        | 1.032     | PREDICT            | 0.953      |
-| 17     | NEGATIVE        | 0.991     | DEPEND             | 0.946      |
-| 18     | DAMAGES         | 0.947     | UNCERTAINTY        | 0.900      |
-| 19     | DELAYS          | 0.936     | DIFFER             | 0.847      |
-| 20     | DECLINE         | 0.916     | CONTINGENT         | 0.795      |
-| 21     | LIMITATIONS     | 0.846     | ANTICIPATE         | 0.788      |
-| 22     | RESTATED        | 0.844     | EXPOSURE           | 0.777      |
-| 23     | DELAY           | 0.831     | VARIABLE           | 0.697      |
-| 24     | VOLATILITY      | 0.792     | DEPENDS            | 0.684      |
-| 25     | CHALLENGES      | 0.752     | PENDING            | 0.666      |
-| 26     | HARMED          | 0.723     | DEPENDENT          | 0.584      |
-| 27     | FINES           | 0.717     | CONTINGENCIES      | 0.574      |
-| 28     | DISRUPTIONS     | 0.704     | ASSUMED            | 0.523      |
-| 29     | CLOSING         | 0.689     | PROBABLE           | 0.515      |
-| 30     | INVESTIGATIONS  | 0.663     | VARY               | 0.492      |
+| 1      | LOSS            | 5.170     | MAY                | 35.615     |
+| 2      | ADVERSELY       | 4.200     | COULD              | 18.414     |
+| 3      | LOSSES          | 3.105     | RISK               | 4.972      |
+| 4      | CLAIMS          | 3.086     | RISKS              | 4.541      |
+| 5      | ADVERSE         | 2.814     | BELIEVE            | 2.885      |
+| 6      | AGAINST         | 2.467     | APPROXIMATELY      | 2.505      |
+| 7      | UNABLE          | 2.020     | ASSUMPTIONS        | 1.874      |
+| 8      | LITIGATION      | 1.994     | INTANGIBLE         | 1.600      |
+| 9      | HARM            | 1.903     | POSSIBLE           | 1.302      |
+| 10     | FAILURE         | 1.845     | UNCERTAINTIES      | 1.151      |
+| 11     | FAIL            | 1.364     | FLUCTUATIONS       | 1.103      |
+| 12     | IMPAIRMENT      | 1.216     | MIGHT              | 1.068      |
+| 13     | NEGATIVELY      | 1.171     | UNCERTAIN          | 1.010      |
+| 14     | DIFFICULT       | 1.169     | ANTICIPATED        | 0.983      |
+| 15     | PENALTIES       | 1.161     | VOLATILITY         | 0.937      |
+| 16     | NEGATIVE        | 1.042     | PREDICT            | 0.931      |
+| 17     | DELAYS          | 0.964     | DEPEND             | 0.922      |
+| 18     | DAMAGES         | 0.931     | UNCERTAINTY        | 0.898      |
+| 19     | RESTATED        | 0.921     | DIFFER             | 0.853      |
+| 20     | DECLINE         | 0.911     | ANTICIPATE         | 0.794      |
+| 21     | LIMITATIONS     | 0.867     | CONTINGENT         | 0.777      |
+| 22     | DELAY           | 0.866     | EXPOSURE           | 0.760      |
+| 23     | VOLATILITY      | 0.788     | DEPENDS            | 0.674      |
+| 24     | CHALLENGES      | 0.776     | VARIABLE           | 0.663      |
+| 25     | FINES           | 0.728     | PENDING            | 0.646      |
+| 26     | DISRUPTIONS     | 0.702     | DEPENDENT          | 0.575      |
+| 27     | HARMED          | 0.689     | CONTINGENCIES      | 0.549      |
+| 28     | INVESTIGATIONS  | 0.680     | PROBABLE           | 0.506      |
+| 29     | BREACH          | 0.666     | ASSUMED            | 0.488      |
+| 30     | INFRINGEMENT    | 0.623     | VARY               | 0.475      |
 
-The ten most frequent words account for 28.0% of negative tokens and 74.3% of uncertainty tokens. The dictionaries contain 2,355 and 297 words; 40 words overlap, so the two scores are not mechanically independent.
+The top ten words account for 28.6% of negative tokens and 74.9% of uncertainty tokens. The active dictionaries contain 2,345 negative and 297 uncertainty words, with 40 words in both categories.
 
-## Measures and filing-event design
+## Tone measures
 
-For a category, the proportional score is its token count divided by all tokens. The weighted score sums w_ij = [(1 + ln tf_ij)/(1 + ln a_j)] ln(N/df_i) over observed category words, where a_j is total tokens divided by distinct tokens within document j. N and document frequency df_i refer to the exact estimation corpus. Natural logs give 0.8480, 0.2885 and 0.5026 for documents “LOSS LOSS RISK GAIN”, “LOSS GAIN GAIN” and “RISK RISK RISK GAIN”, using category {LOSS, RISK}. This implements Loughran and McDonald (2011), equation (1).
+The Loughran–McDonald Master Dictionary, 1993–2025 release, was updated in March 2026. A positive category value identifies an active word; a negative value records removal from that category. Only active entries enter the scores. Thus the negative category contains 2,345 words; the 10 removed entries are excluded. The proportional score divides category occurrences by all tokens in a filing.
 
-Primary-document text retains visible XBRL facts and excludes hidden scaffolding, separate exhibits and tables with more than 15% digits among non-space characters. Uppercase alphabetic tokens have at least two characters and retain apostrophes and hyphens. Incorporated-by-reference text is not recovered.
+$$
+P_{cj}=\frac{\sum_{i\in c}tf_{ij}}{W_j}
+$$
 
-Day 0 follows the NYSE calendar and the later of filing date or Eastern acceptance date, advanced one day for acceptance at or after 16:00. SPY-adjusted buy-and-hold returns run from day -1 close to +3 close. Volatility is daily-return sample SD times sqrt(252), using 55 returns over [-60,-6] and 60 over [+4,+63].
+Equation (1) applies logarithmic term frequency and inverse document frequency. The score sums weights over category words observed in a filing.
 
-Size uses day -1 nominal price and accession-matched cover shares; separately tagged same-date classes are summed, using one class price as a proxy for all classes. Future or weighted-average shares are excluded. Subsequent splits are reversed for nominal prices and volumes; adjusted closes measure returns. Liquidity and prior excess return use [-60,-6]. Regression controls are listed with the tables.
+$$
+\begin{aligned}
+T_{cj}=\sum_{i\in c,\,tf_{ij}>0}\frac{1+\ln(tf_{ij})}{1+\ln(a_j)}\ln\!\left(\frac{N}{df_i}\right)\\
+a_j=\frac{W_j}{V_j}
+\end{aligned}
+$$
 
-Full-sample sentiment/uncertainty correlations are 0.834 for proportions and 0.919 for weighted scores. TSLA's 10-Q filed 2023-10-23 has 2.77% negative words and 1.05% uncertainty words (percentile ranks 72 and 5). This is a relative contrast; it is not an upper-quartile negative-tone case. The high correlations indicate substantial common variation, so the two measures do not provide independent evidence.
+W is total tokens, V is distinct tokens, N is documents in the relevant estimation corpus and df is document frequency. All logarithms are natural. The text, volatility and return samples each fit their own word weights; report-type analyses also refit within form. The weighted score is measured in score units rather than percentages.
+
+An illustrative calculation uses “LOSS LOSS RISK GAIN”, “LOSS GAIN GAIN” and “RISK RISK RISK GAIN”, with category {LOSS, RISK}. Their weighted scores are 0.8480, 0.2885 and 0.5026. These constructed documents illustrate the formula.
+
+Primary-document text retains visible XBRL facts and excludes hidden content, separate exhibits and tables with more than 15% digits among non-space characters. Alphabetic tokens contain at least two characters and retain apostrophes and hyphens. Incorporated-by-reference text is not recovered.
+
+TSLA's 10-Q filed 2023-10-23 contains 2.72% negative words and 1.05% uncertainty words, at percentile ranks 71 and 4, respectively. It has the largest negative-minus-uncertainty percentile gap in the text sample. This selected contrast is not representative of all filings.
 
 Selected filing language: On October 27, 2021, the Court approved the parties’ joint stipulation that, among other things, (a) all claims against Kimbal Musk and Steve Jurvetson …
 
-This passage concerns litigation. Dictionary counts register the legal vocabulary but do not determine whether a ruling was favorable.
+Dictionary counts identify category vocabulary; they do not determine the direction or significance of the event described.
 
-MAY and COULD account for more than half of uncertainty tokens. These modal terms often qualify routine risk and contingency language. This concentration and their widespread occurrence support a large template component, although counts alone cannot establish copied text or changes in management beliefs. Earlier same-form filings would be needed for that distinction.
+MAY and COULD account for 54.0% of uncertainty tokens. These counts do not distinguish recurring disclosure language from newly expressed uncertainty. High negative/uncertainty correlations also mean the two measures do not provide independent evidence.
 
-MAY appears in 100.0% of filings and APPROXIMATELY in 99.5%. Their prevalence limits their ability to distinguish documents; inverse document frequency reduces their contribution accordingly.
+MAY occurs in 100.0% of filings and APPROXIMATELY in 98.8%. Inverse document frequency gives less weight to words appearing in most documents.
 
 ## Figure 1. Quarterly tone and VIX
 
 ![Quarterly tone and VIX](outputs/figure1.png)
 
+10-K: 1–82 filings per observed quarter; 10-Q: 7–94 filings per observed quarter. Sparse annual-report quarters may reflect only a few companies. Company-centered means reduce baseline composition differences, but entry and exit periods can still affect this unbalanced panel. The gray dashed series is quarterly average VIX on the right axes; the latest quarter is partial when indicated. Formal trend inference uses Table 4.
+
 ## Table 4. Annual tone trends
 
-Aggregate models include seasonal indicators and show both ordinary and Newey–West t-statistics (four lags). Within-company models include company effects, seasonal indicators and, in the pooled sample, report type. They exclude saturated calendar-quarter effects, which would absorb time. The main within-company inference clusters by company and calendar quarter, with min(company clusters, quarter clusters) minus one degrees of freedom.
+Quarter-level means estimate the aggregate trend. Filing-level models estimate change within companies:
 
-| Sample   | Measure     | Agg. slope   | OLS t   | NW t   | Within slope   | Within t   | p        |
-|:---------|:------------|:-------------|:--------|:-------|:---------------|:-----------|:---------|
-| All      | Neg. %      | 0.011        | 1.030   | 0.826  | 0.004          | 0.336      | 0.741    |
-| All      | Unc. %      | -0.008       | -1.275  | -1.306 | -0.015         | -1.996     | 0.060    |
-| All      | Neg. tf.idf | 0.738        | 0.797   | 0.646  | -0.187         | -0.223     | 0.826    |
-| All      | Unc. tf.idf | -0.222       | -1.540  | -1.171 | -0.422         | -3.705     | 0.002    |
-| 10-K     | Neg. %      | 0.054        | 10.306  | 11.967 | 0.056          | 8.191      | 1.18e-07 |
-| 10-K     | Unc. %      | 0.015        | 2.389   | 2.307  | 0.022          | 5.570      | 2.26e-05 |
-| 10-K     | Neg. tf.idf | 2.166        | 2.907   | 5.405  | 2.426          | 4.876      | 1.05e-04 |
-| 10-K     | Unc. tf.idf | -0.274       | -1.533  | -2.399 | -0.165         | -1.307     | 0.207    |
-| 10-Q     | Neg. %      | -0.018       | -1.460  | -1.502 | -0.011         | -0.725     | 0.478    |
-| 10-Q     | Unc. %      | -0.039       | -3.448  | -3.878 | -0.026         | -2.524     | 0.021    |
-| 10-Q     | Neg. tf.idf | -2.074       | -2.550  | -2.710 | -1.929         | -1.585     | 0.129    |
-| 10-Q     | Unc. tf.idf | -0.608       | -4.269  | -4.661 | -0.582         | -3.720     | 0.001    |
+$$
+\begin{aligned}
+\bar T_q=\alpha+\beta\tau_q+\sum_{s=2}^{4}\delta_sD_{sq}+\varepsilon_q\\
+T_{iq}=\alpha_i+\beta\tau_q+\sum_{s=2}^{4}\delta_sD_{sq}+\theta K_{iq}+\varepsilon_{iq}
+\end{aligned}
+$$
 
-Proportional slopes are percentage points per year; tf.idf slopes are weighted-score units per year. The aggregate series has at most 20 quarters. A low HAC p-value alone is insufficient evidence of a persistent economic trend.
+Time is elapsed years from the first sample quarter. Seasonal indicators control the reporting quarter of the year. Company effects control company mean levels; K indicates a 10-K in the pooled sample and is omitted within each report type. Saturated calendar-quarter effects are excluded because they would absorb the trend. Aggregate inference shows ordinary OLS and Newey–West t-statistics with four lags. Within-company t and p use two-way company/calendar-quarter clustering.
 
-All denotes pooled 10-K and 10-Q reports. Within-company cluster counts: All: 84 companies / 20 quarters; 10-K: 83 companies / 20 quarters; 10-Q: 83 companies / 20 quarters.
+| Sample   | Measure     | Agg. slope   | OLS t   | NW t   | Within slope   | Within t   | p                    |
+|:---------|:------------|:-------------|:--------|:-------|:---------------|:-----------|:---------------------|
+| All      | Neg. %      | 0.021        | 2.790   | 2.334  | 0.010          | 0.856      | 0.401                |
+| All      | Unc. %      | 0.003        | 0.689   | 0.595  | -0.004         | -0.515     | 0.612                |
+| All      | Neg. tf.idf | 1.551        | 2.528   | 1.998  | 0.305          | 0.355      | 0.726                |
+| All      | Unc. tf.idf | -0.053       | -0.473  | -0.329 | -0.186         | -1.417     | 0.171                |
+| 10-K     | Neg. %      | 0.061        | 9.919   | 11.355 | 0.062          | 6.984      | $6.75\times 10^{-7}$ |
+| 10-K     | Unc. %      | 0.019        | 3.540   | 3.351  | 0.029          | 7.523      | $2.17\times 10^{-7}$ |
+| 10-K     | Neg. tf.idf | 3.266        | 3.169   | 3.431  | 2.205          | 3.402      | 0.003                |
+| 10-K     | Unc. tf.idf | -0.145       | -0.912  | -1.155 | 0.043          | 0.230      | 0.820                |
+| 10-Q     | Neg. %      | -0.013       | -1.198  | -1.391 | -0.007         | -0.492     | 0.628                |
+| 10-Q     | Unc. %      | -0.030       | -2.819  | -3.366 | -0.015         | -1.591     | 0.126                |
+| 10-Q     | Neg. tf.idf | -0.928       | -1.234  | -1.167 | -1.282         | -1.055     | 0.303                |
+| 10-Q     | Unc. tf.idf | -0.391       | -3.046  | -2.695 | -0.348         | -2.192     | 0.039                |
 
-The form-specific within-company results differ: annual-report negative tone rises 0.056 percentage points per year (t = 8.19) and annual uncertainty rises 0.022 (t = 5.57), while quarterly uncertainty falls 0.026 (t = -2.52). A single pooled trend would conceal this difference.
+Proportional slopes are percentage points per year; weighted slopes are score units per year. All: 97 companies, 23 quarters, 22 inference degrees of freedom; 10-K: 91 companies, 22 quarters, 21 inference degrees of freedom; 10-Q: 97 companies, 23 quarters, 22 inference degrees of freedom.
 
-Negative tone changes by +0.004 percentage points per year within companies (two-way clustered t = 0.34, p = 0.741); this estimate is not statistically distinguishable from zero at 5%. Company effects and reporting-season controls make this more informative than the aggregate slope.
+10-K negative-word shares change by +0.062 percentage points per year (p < 0.001); uncertainty-word shares change by +0.029 points (p < 0.001). The corresponding weighted slopes are +2.205 (p = 0.003) and +0.043 (p = 0.820).
 
-Uncertainty changes by -0.015 percentage points per year within companies (two-way clustered t = -2.00, p = 0.060); this estimate is not statistically distinguishable from zero at 5%. Company effects and reporting-season controls make this more informative than the aggregate slope.
+10-Q negative-word shares change by -0.007 percentage points per year (p = 0.628); uncertainty-word shares change by -0.015 points (p = 0.126). The corresponding weighted slopes are -1.282 (p = 0.303) and -0.348 (p = 0.039).
 
-Weighted negative tone changes by -0.187 score units per year (t = -0.22, p = 0.826). Weighted and proportional results are different measurements and should not be treated as independent replications.
+Within-company estimates receive more weight than aggregate slopes because they account for company levels and reporting season. Proportional and weighted measures capture related language and are not independent replications. Sparse annual-report quarters limit interpretation of individual points in the chart. The final quarter also has incomplete filing coverage.
 
-Weighted uncertainty changes by -0.422 score units per year (t = -3.70, p = 0.002). Weighted and proportional results are different measurements and should not be treated as independent replications.
+## Filing-event design
 
-The chart separates form types and removes company mean levels. In this unbalanced panel, company means reflect different entry and exit periods; the chart therefore does not fully remove selection over time. The within-company regression, rather than visual slope alone, determines the trend interpretation.
+Day 0 is the first NYSE session on or after the later of the filing date and the Eastern acceptance date. Acceptance at or after the exchange’s actual close, including an early close, moves the event to the next session. Market data include only completed sessions through 2026-09-08.
+
+$$
+\begin{aligned}
+R^{[0,3],\mathrm{excess}}=\frac{P^{\mathrm{adj}}_{+3}}{P^{\mathrm{adj}}_{-1}}-\frac{SPY^{\mathrm{adj}}_{+3}}{SPY^{\mathrm{adj}}_{-1}}\\
+\sigma^{\mathrm{pre}}=\sqrt{252}\,\mathrm{SD}(r_{-60},\ldots,r_{-6})\\
+\sigma^{\mathrm{post}}=\sqrt{252}\,\mathrm{SD}(r_{+4},\ldots,r_{+63})
+\end{aligned}
+$$
+
+The event spans four daily return intervals. Pre-filing volatility uses 55 daily returns and post-filing volatility uses 60, with sample standard deviations. Adjusted closes measure returns; nominal closes determine the \$3 price filter and company size. Later splits are reversed for nominal price and volume histories. Future returns are not imputed.
+
+Size is the day −1 nominal price times outstanding shares from the scored filing’s cover page. Same-date share classes are summed using one class price as a proxy; future or weighted-average shares are excluded. Liquidity is mean nominal dollar volume over days [−60,−6], and prior excess return is SPY-adjusted buy-and-hold return over that interval.
+
+The outcome models use firm effects, calendar-quarter effects and the following controls:
+
+$$
+\begin{aligned}
+C_{iq}=\gamma_1\ln(\mathrm{Size}_{iq})+\gamma_2\ln(\mathrm{DollarVolume}_{iq})\\
+\qquad+\gamma_3R^{\mathrm{pre,excess}}_{iq}+\theta K_{iq}\\
+\sigma^{\mathrm{post}}_{iq}=\alpha_i+\lambda_q+\beta U_{iq}+C_{iq}+[\rho\sigma^{\mathrm{pre}}_{iq}]+\varepsilon_{iq}\\
+R^{[0,3],\mathrm{excess}}_{iq}=\alpha_i+\lambda_q+\beta N_{iq}+C_{iq}+\rho\sigma^{\mathrm{pre}}_{iq}+\varepsilon_{iq}
+\end{aligned}
+$$
+
+U is uncertainty and N is negative tone, each estimated separately as a proportion and a weighted score. The bracketed pre-volatility term is included or omitted in the paired volatility tests; it is always included in the return tests. The 10-K indicator K applies only to the pooled sample. No winsorisation is applied.
 
 ## Table 5. Uncertainty and subsequent volatility
 
-Dependent variable: annualised post-filing volatility. Coefficients use uncertainty fractions or tf.idf units. All models include company and quarter effects, size, liquidity, prior excess return and report type where applicable. Both specifications use identical observations. t and p use two-way company/quarter clustering.
+Dependent variable: annualised volatility as a fraction. Coefficients are per unit of uncertainty fraction or weighted score. Both specifications use the same complete observations within each sample. Two-way company/quarter clustering determines t and p. All: 87 companies, 22 quarters, 21 inference degrees of freedom; 10-K: 86 companies, 21 quarters, 20 inference degrees of freedom; 10-Q: 86 companies, 22 quarters, 21 inference degrees of freedom.
 
-| Sample   | Measure   | Pre-vol   | Coefficient   | t      | p     | N     |
-|:---------|:----------|:----------|:--------------|:-------|:------|:------|
-| All      | prop      | No        | -0.169        | -0.117 | 0.908 | 1,437 |
-| All      | prop      | Yes       | -0.721        | -0.567 | 0.578 | 1,437 |
-| All      | tfidf     | No        | 1.69e-04      | 0.206  | 0.839 | 1,437 |
-| All      | tfidf     | Yes       | -1.49e-04     | -0.199 | 0.844 | 1,437 |
-| 10-K     | prop      | No        | -16.264       | -0.759 | 0.457 | 349   |
-| 10-K     | prop      | Yes       | -24.921       | -1.033 | 0.315 | 349   |
-| 10-K     | tfidf     | No        | 0.004         | 0.555  | 0.586 | 349   |
-| 10-K     | tfidf     | Yes       | 0.005         | 0.905  | 0.377 | 349   |
-| 10-Q     | prop      | No        | 3.207         | 1.338  | 0.197 | 1,088 |
-| 10-Q     | prop      | Yes       | 2.221         | 0.975  | 0.342 | 1,088 |
-| 10-Q     | tfidf     | No        | 0.003         | 2.171  | 0.043 | 1,088 |
-| 10-Q     | tfidf     | Yes       | 0.002         | 1.602  | 0.126 | 1,088 |
+| Sample   | Measure   | Pre-vol   | Coefficient           | t      | p     | N     |
+|:---------|:----------|:----------|:----------------------|:-------|:------|:------|
+| All      | prop      | No        | 0.463                 | 0.360  | 0.722 | 1,600 |
+| All      | prop      | Yes       | -0.096                | -0.091 | 0.929 | 1,600 |
+| All      | tfidf     | No        | $-2.38\times 10^{-5}$ | -0.021 | 0.983 | 1,600 |
+| All      | tfidf     | Yes       | $-3.15\times 10^{-4}$ | -0.327 | 0.747 | 1,600 |
+| 10-K     | prop      | No        | -19.326               | -1.206 | 0.242 | 423   |
+| 10-K     | prop      | Yes       | -26.211               | -1.457 | 0.161 | 423   |
+| 10-K     | tfidf     | No        | -0.003                | -0.447 | 0.659 | 423   |
+| 10-K     | tfidf     | Yes       | -0.002                | -0.267 | 0.792 | 423   |
+| 10-Q     | prop      | No        | 4.734                 | 2.037  | 0.054 | 1,177 |
+| 10-Q     | prop      | Yes       | 3.592                 | 1.689  | 0.106 | 1,177 |
+| 10-Q     | tfidf     | No        | 0.004                 | 2.703  | 0.013 | 1,177 |
+| 10-Q     | tfidf     | Yes       | 0.003                 | 2.204  | 0.039 | 1,177 |
 
-Proportional uncertainty: the coefficient changes from -0.169 (t = -0.12) to -0.721 (t = -0.57) after controlling for pre-filing volatility, a difference of -0.552. The controlled association is not statistically distinguishable from zero at 5%. A one-standard-deviation increase corresponds to -0.38 percentage points of annualised volatility. The controlled model asks whether tone adds information beyond existing volatility; the unadjusted model can reflect persistence in company risk.
+Proportional uncertainty: a one-standard-deviation increase corresponds to -0.05 percentage points of annualised volatility after controlling for prior volatility (95% interval [-1.19, +1.09]). The uncontrolled effect is +0.24 points (p = 0.722), compared with p = 0.929 after control. Adding the control changes the estimated effect by -0.29 points. This comparison tests incremental association beyond existing volatility.
 
-Weighted uncertainty: the coefficient changes from 1.69e-04 (t = 0.21) to -1.49e-04 (t = -0.20) after controlling for pre-filing volatility, a difference of -3.18e-04. The controlled association is not statistically distinguishable from zero at 5%. A one-standard-deviation increase corresponds to -0.14 percentage points of annualised volatility. The controlled model asks whether tone adds information beyond existing volatility; the unadjusted model can reflect persistence in company risk.
+Weighted uncertainty: a one-standard-deviation increase corresponds to -0.30 percentage points of annualised volatility after controlling for prior volatility (95% interval [-2.22, +1.61]). The uncontrolled effect is -0.02 points (p = 0.983), compared with p = 0.747 after control. Adding the control changes the estimated effect by -0.28 points. This comparison tests incremental association beyond existing volatility.
+
+For 10-Q weighted uncertainty, the effect per tone standard deviation changes from +3.02 to +2.35 volatility percentage points after adding prior volatility (p = 0.013 and = 0.039). The controlled proportional-score estimate has p = 0.106. Differences across weighting schemes and multiple unadjusted tests limit the strength of an isolated significant association.
 
 ## Table 6. Negative sentiment and filing-period excess return
 
-The four-session event can coincide with earnings news. Approximate 80% minimum detectable effects (MDE) are computed as (two-sided 5% t critical value + 0.842) times the coefficient standard error, then scaled by tone SD. Effect and MDE columns are percentage points of return per one tone SD; these describe precision, not observed power.
+Dependent variable: SPY-adjusted four-session buy-and-hold return as a fraction. All models include log size, log dollar volume, prior excess return, pre-filing volatility, company effects and calendar-quarter effects; pooled models also include the 10-K indicator. Coefficients are per unit of negative-word fraction or weighted score. t and p use two-way company/quarter clustering. All: 91 companies, 23 quarters, 22 inference degrees of freedom; 10-K: 86 companies, 22 quarters, 21 inference degrees of freedom; 10-Q: 90 companies, 23 quarters, 22 inference degrees of freedom.
 
-| Sample   | Measure   | Coef.     | t      | p     | Effect pp   | MDE pp   | N     |
-|:---------|:----------|:----------|:-------|:------|:------------|:---------|:------|
-| All      | prop      | -1.022    | -1.366 | 0.188 | -0.866      | 1.860    | 1,437 |
-| All      | tfidf     | -1.46e-04 | -1.267 | 0.220 | -1.070      | 2.479    | 1,437 |
-| 10-K     | prop      | -6.782    | -0.799 | 0.434 | -2.718      | 9.983    | 349   |
-| 10-K     | tfidf     | -7.90e-04 | -1.045 | 0.309 | -3.025      | 8.495    | 349   |
-| 10-Q     | prop      | -2.920    | -2.299 | 0.033 | -2.751      | 3.512    | 1,088 |
-| 10-Q     | tfidf     | -3.54e-04 | -2.114 | 0.048 | -2.715      | 3.770    | 1,088 |
+| Sample   | Measure   | Coef.                 | t      | p     | Effect pp   | MDE pp   | N     |
+|:---------|:----------|:----------------------|:-------|:------|:------------|:---------|:------|
+| All      | prop      | -0.577                | -0.950 | 0.352 | -0.497      | 1.524    | 1,682 |
+| All      | tfidf     | $-9.91\times 10^{-5}$ | -1.123 | 0.274 | -0.732      | 1.900    | 1,682 |
+| 10-K     | prop      | -3.712                | -0.506 | 0.618 | -1.518      | 8.766    | 424   |
+| 10-K     | tfidf     | $-8.31\times 10^{-4}$ | -1.445 | 0.163 | -3.166      | 6.401    | 424   |
+| 10-Q     | prop      | -1.586                | -1.385 | 0.180 | -1.523      | 3.205    | 1,258 |
+| 10-Q     | tfidf     | $-1.85\times 10^{-4}$ | -1.235 | 0.230 | -1.438      | 3.394    | 1,258 |
 
-The proportional sentiment return coefficient is -1.022 (t = -1.37, p = 0.188). Its approximate detectable effect is 1.86 return percentage points per tone SD. A null at this precision does not establish zero price response. Event overlap and the short window make this test less decisive than a within-company language trend or a volatility association.
+$$
+\mathrm{MDE}^{\mathrm{pp}}_{80,1\mathrm{SD}}=100\left(t_{0.975,\nu}+\Phi^{-1}(0.8)\right)\mathrm{SE}(\hat\beta)\,s_{\mathrm{tone}}
+$$
 
-The 10-Q-only return estimates have t = -2.30 (proportional, p = 0.033) and t = -2.11 (weighted, p = 0.048). These subgroup results must be distinguished from the pooled null. They are tentative because the specifications are correlated, multiple tests are reported without multiplicity adjustment, and nearby earnings releases can drive the same return window.
+Effect and minimum detectable effect (MDE) are return percentage points per one tone standard deviation. MDE approximates 80% power for a two-sided 5% test using the stated inference degrees of freedom. It measures precision rather than observed power.
 
-## Report-type differences
+All: a one-standard-deviation increase in proportional negative tone corresponds to -0.50 return percentage points (p = 0.352), with an approximate detectable effect of 1.52 points. The weighted-score effect is -0.73 points (p = 0.274).
 
-Negative proportional-tone SD is 0.401 percentage points for 10-Ks and 0.942 for 10-Qs. Shorter reports can increase sampling noise in a ratio, while repeated templates can suppress variation; the observed variance reflects both mechanisms and report content.
+10-K: a one-standard-deviation increase in proportional negative tone corresponds to -1.52 return percentage points (p = 0.618), with an approximate detectable effect of 8.77 points. The weighted-score effect is -3.17 points (p = 0.163).
 
-Uncertainty proportional-tone SD is 0.243 percentage points for 10-Ks and 0.581 for 10-Qs. Shorter reports can increase sampling noise in a ratio, while repeated templates can suppress variation; the observed variance reflects both mechanisms and report content.
+10-Q: a one-standard-deviation increase in proportional negative tone corresponds to -1.52 return percentage points (p = 0.180), with an approximate detectable effect of 3.20 points. The weighted-score effect is -1.44 points (p = 0.230).
 
-For 10-Ks, the uncertainty trend is +0.022 percentage points per year (t = 5.57); the volatility coefficient with pre-volatility is -24.921 (t = -1.03). These are separate within-form estimates; differing significance alone is not a formal test of coefficient equality.
+Statistical insignificance does not establish zero price response. Earnings releases can overlap the filing window and drive the same returns. Correlated specifications and multiple unadjusted tests also limit the interpretation of isolated significant estimates.
 
-For 10-Qs, the uncertainty trend is -0.026 percentage points per year (t = -2.52); the volatility coefficient with pre-volatility is 2.221 (t = 0.97). These are separate within-form estimates; differing significance alone is not a formal test of coefficient equality.
+## Report-type differences and limitations
 
-For quarterly weighted uncertainty, adding pre-volatility reduces the volatility coefficient from 0.002615 (p = 0.043) to 0.001893 (p = 0.126). The apparent association is no longer significant once existing volatility is controlled. This supports interpreting the uncontrolled association cautiously.
+The within-company trends supported by both weighting schemes at the 5% level are: 10-K negative tone increase. These receive more weight than results that depend on the weighting scheme, although the two measures are correlated. Volatility associations assess incremental information after existing risk is controlled; short-window returns have separate precision and earnings-overlap limitations.
 
-10-Ks contain fuller annual business and risk disclosures, but more words need not imply more new information. 10-Qs can contain timely updates, yet their proximity to earnings announcements prevents a clean attribution of the filing-window return to textual tone alone. Novel changes relative to the previous same-form filing would better distinguish signal from templates.
+Negative proportional-score SD is 0.420 percentage points for 10-Ks and 0.972 for 10-Qs. Report length, repeated language and changing content may affect dispersion; this analysis does not identify their separate contributions.
 
-## Interpretation and limitations
+Uncertainty proportional-score SD is 0.242 percentage points for 10-Ks and 0.587 for 10-Qs. Report length, repeated language and changing content may affect dispersion; this analysis does not identify their separate contributions.
 
-The annual negative-tone increase and quarterly uncertainty decline receive the most weight: both persist within companies under proportional and weighted measurement. The annual uncertainty increase is less robust because its weighted trend is insignificant. The controlled volatility models provide no convincing positive incremental association. The quarterly return association remains tentative given event contamination and multiple tests. These are conditional associations, not causal effects or a live trading strategy.
+10-Ks provide annual business and risk disclosures, while 10-Qs provide quarterly updates. More words do not necessarily imply more new information. Different significance levels across forms do not establish that coefficients differ.
 
-For pooled proportional uncertainty, the controlled 95% interval is [-1.77, 1.01] percentage points of annualised volatility per tone SD. This bounds the incremental association under the specification. The null should not be dismissed with a blanket claim that every test lacks power.
+0 of 12 estimable within-company trend tests change 5% significance between company-only and two-way clustering. The two-way estimates use 22, 23 time clusters across samples, so finite-sample inference remains approximate. All four tone trends, both volatility specifications and both return measures are reported for pooled and separate report-type samples.
 
-0 of 12 within-company trend tests change 5% significance when moving from company-only to two-way clustering. The main tables use the latter to allow shared quarterly shocks. Only 20 time clusters remain, so even corrected inference is approximate. All estimated specifications are retained in the notebook: four tone trends, two uncertainty-volatility measures with both controls specifications, and two sentiment-return measures, pooled and by form, with both clustering choices. There is no winsorisation or selective removal of inconvenient estimates.
+Of 175 distinct securities held on May 6, 2021, 106 (60.6%) do not match the frozen 2026 holdings by normalized ticker or valid CUSIP. Identity changes, mergers and share classes mean these absences do not all represent company failures.
 
-Of 175 distinct securities in the May 6, 2021 holdings, 106 (60.6%) do not match the frozen 2026 holdings by either normalized ticker or valid CUSIP. The universe is selected using 2026 holdings, so every company in the study survived this selection rule. Identity changes, mergers and share classes mean these security absences cannot all be interpreted as failed companies.
-
-Selection can exclude firms with deteriorating outcomes and distort measured trends. The mixed holdings dates, incomplete historical identifiers, strict share-count coverage, common-case filters and benchmark choice further limit generalisation. Full-corpus tf.idf uses later filings to estimate word weights; it is a descriptive retrospective measure, not a live forecasting protocol.
-
-## Next step
-
-Reconstruct a point-in-time holdings universe and score only language newly introduced since the previous comparable filing. Combine that design with earnings timestamps and forward-only dictionary weights. This requires historical identifier mapping and additional text alignment, but directly addresses selection, template repetition and event contamination.
+The 2026 holdings selection, mixed holdings dates and incomplete historical identifiers limit generalisation. Market-window and share-count availability impose additional selection on the outcome samples. Full-corpus word weights use later filings and the current dictionary is applied retrospectively. The estimates therefore describe retrospective conditional associations, not causal effects or an implementable live strategy.
 
 ## Sources
 
-Loughran, T. and B. McDonald (2011), “When Is a Liability Not a Liability? Textual Analysis, Dictionaries, and 10-Ks,” Journal of Finance 66(1), 35–65. https://doi.org/10.1111/j.1540-6261.2010.01625.x. SEC EDGAR filings and company facts: https://www.sec.gov/edgar. Market series: Yahoo Finance via yfinance. Loughran–McDonald Master Dictionary: https://sraf.nd.edu/loughranmcdonald-master-dictionary/. Holdings: https://github.com/robynge/ark-routine and the course starter repository.
+[Loughran and McDonald (2011), Journal of Finance 66(1), 35–65: When Is a Liability Not a Liability? Textual Analysis, Dictionaries, and 10-Ks](https://doi.org/10.1111/j.1540-6261.2010.01625.x)
 
-Illustrative filing: https://www.sec.gov/Archives/edgar/data/1318605/000162828023034847/tsla-20230930.htm
+[Loughran–McDonald Master Dictionary, 1993–2025 release; updated March 2026; accessed September 9, 2026](https://sraf.nd.edu/loughranmcdonald-master-dictionary/)
+
+[SEC EDGAR: filings and company facts](https://www.sec.gov/edgar)
+
+[Yahoo Finance: price, volume, corporate actions and market indices](https://finance.yahoo.com/)
+
+[ARK holdings archive](https://github.com/robynge/ark-routine)
+
+[FRE-GY 7871 A course holdings and assignment materials](https://github.com/anmolsingh0219/FRE-GY-7871A-Assignment1)
+
+[Illustrative SEC filing](https://www.sec.gov/Archives/edgar/data/1318605/000162828023034847/tsla-20230930.htm)

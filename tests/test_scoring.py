@@ -4,7 +4,7 @@ import pytest
 from src.scoring import score_corpus
 
 
-def test_assignment_equation_one_reference_values():
+def test_equation_one_worked_example():
     docs = [Counter(x.split()) for x in ["LOSS LOSS RISK GAIN", "LOSS GAIN GAIN", "RISK RISK RISK GAIN"]]
     scores = score_corpus(docs, {"tone": {"LOSS", "RISK"}})
     np.testing.assert_allclose(scores.tone_prop, [.75, 1/3, .75])
@@ -25,3 +25,12 @@ def test_refitting_changes_idf_when_sample_changes():
 def test_empty_document_rejected():
     with pytest.raises(ValueError):
         score_corpus([Counter()], {"tone": {"A"}})
+
+
+def test_removed_dictionary_entries_are_excluded():
+    import pandas as pd
+    from src.lexicons import lm_word_lists
+    from src.config import LM_CATEGORIES
+    master = pd.DataFrame({"Word":["LOSS","CRITICAL","NEUTRAL"],
+                           **{c:[2009,-2020,0] for c in LM_CATEGORIES}})
+    assert all(words == {"LOSS"} for words in lm_word_lists(master).values())
