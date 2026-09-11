@@ -18,7 +18,8 @@ sys.path.insert(0, str(ROOT))
 from src.report_math import format_number, formula_image
 
 REPO = 'https://github.com/robynge/FRE-GY-7871A-Assignment1'
-BLUE = colors.HexColor('#174A72')
+ACCENT = colors.HexColor('#8264FF')
+INK = colors.HexColor('#0A0A23')
 FORMS = ['All', '10-K', '10-Q']
 TONES = ['Negative_prop', 'Uncertainty_prop', 'Negative_tfidf', 'Uncertainty_tfidf']
 
@@ -42,15 +43,16 @@ def main():
     last_market = audit['market_last_date']
     period = f'{start} to {end}'
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name='BodySmall', fontName='Helvetica', fontSize=9, leading=12, spaceAfter=7))
-    styles.add(ParagraphStyle(name='NoteSmall', fontName='Helvetica', fontSize=8, leading=10.3, spaceAfter=6, textColor=colors.HexColor('#444444')))
-    styles.add(ParagraphStyle(name='TableSmall', fontName='Helvetica', fontSize=7.5, leading=9.3))
+    styles.add(ParagraphStyle(name='BodySmall', fontName='Helvetica', fontSize=9, leading=12, spaceAfter=7, textColor=INK))
+    styles.add(ParagraphStyle(name='NoteSmall', fontName='Helvetica', fontSize=8, leading=10.3, spaceAfter=6, textColor=colors.HexColor('#676777')))
+    styles.add(ParagraphStyle(name='TableSmall', fontName='Helvetica', fontSize=7.5, leading=9.3, textColor=INK))
+    styles.add(ParagraphStyle(name='TableHead', fontName='Helvetica-Bold', fontSize=7.5, leading=9.3, textColor=INK))
     styles['Title'].fontSize = 19
     styles['Title'].leading = 23
-    styles['Title'].textColor = BLUE
+    styles['Title'].textColor = INK
     styles['Heading2'].fontSize = 11
     styles['Heading2'].leading = 14
-    styles['Heading2'].textColor = BLUE
+    styles['Heading2'].textColor = INK
     styles['Heading2'].keepWithNext = True
     story, md = [], []
 
@@ -59,7 +61,7 @@ def main():
         md.append(text.replace('$', r'\$') + '\n')
 
     def link(label, url):
-        story.append(Paragraph(f'<link href="{escape(url, quote=True)}" color="#174A72">{escape(label)}</link>', styles['NoteSmall']))
+        story.append(Paragraph(f'<link href="{escape(url, quote=True)}" color="#6542CE">{escape(label)}</link>', styles['NoteSmall']))
         md.append(f'[{label}]({url})\n')
 
     def h(text):
@@ -72,17 +74,20 @@ def main():
         md.append('$$\n' + (lines[0] if len(lines) == 1 else '\\begin{aligned}\n' + '\\\\\n'.join(lines) + '\n\\end{aligned}') + '\n$$\n')
 
     def table(df, widths=None):
-        rows = [[Paragraph(escape(str(c)), styles['TableSmall']) for c in df.columns]]
+        rows = [[Paragraph(escape(str(c)), styles['TableHead']) for c in df.columns]]
         rows += [[Paragraph(format_number(v, target='pdf'), styles['TableSmall']) for v in row]
                  for row in df.itertuples(index=False, name=None)]
         t = Table(rows, colWidths=widths, repeatRows=1, hAlign='LEFT')
         t.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E7EEF3')),
-            ('LINEBELOW', (0, 0), (-1, 0), .6, BLUE), ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F0ECFF')),
+            ('LINEBELOW', (0, 0), (-1, 0), .6, ACCENT), ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('LEFTPADDING', (0, 0), (-1, -1), 4), ('RIGHTPADDING', (0, 0), (-1, -1), 4),
             ('TOPPADDING', (0, 0), (-1, -1), 3), ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F6F8FA')])]))
-        story.extend([KeepTogether([t]) if len(rows) <= 15 else t, Spacer(1, 7)])
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#FAF9FE')])]))
+        if len(rows) <= 15:
+            group = [story.pop(), t] if story and getattr(story[-1], 'keepWithNext', False) else [t]
+            t = KeepTogether(group)
+        story.extend([t, Spacer(1, 7)])
         md.append(df.map(lambda x: format_number(x, target='markdown')).to_markdown(index=False, disable_numparse=True) + '\n')
 
     def page():
@@ -115,19 +120,67 @@ def main():
     story.append(Paragraph('Uncertainty and sentiment in financial reports', styles['Title']))
     p('FRE-GY 7871 A · NLP and the Investment Process · Filing dates ' + period)
     link('Research repository', REPO)
-    p(f"{audit['final_filings']:,} filings from {audit['final_companies']} companies enter the text analysis. "
-      f"The volatility analysis uses {audit['volatility_filings']:,} filings and the return analysis uses {audit['return_filings']:,}. "
-      'Negative words measure adverse language; uncertainty words measure imprecision and hedging. '
-      'All results describe associations in companies selected from ARK holdings.')
     an = row(4, '10-K', 'Negative_prop', 'within_firm_trend')
-    qu = row(4, '10-Q', 'Uncertainty_prop', 'within_firm_trend')
+    aw = row(4, '10-K', 'Negative_tfidf', 'within_firm_trend')
     controlled = tables[5].query("inference == 'firm_quarter_cluster' and model == 'volatility_with_prevol'")
     significant = int(controlled.p.lt(.05).sum())
-    rr = row(6, 'All', 'Negative_prop', 'filing_return')
-    p(f'Within companies, annual-report negative-word shares change by {100*an.coef:+.3f} percentage points per year '
-      f'(p {p_value(an.p)}); quarterly-report uncertainty changes by {100*qu.coef:+.3f} points (p {p_value(qu.p)}). '
-      f'After controlling for prior volatility, {significant} of {len(controlled)} uncertainty specifications are significant at 5%. '
-      f'The pooled negative-tone return estimate {strength(rr)} (p {p_value(rr.p)}).')
+    return_tests = tables[6].query("inference == 'firm_quarter_cluster'")
+    ret_significant = int(return_tests.p.lt(.05).sum())
+    score_data = pd.read_csv(out / 'text_sample.csv')
+    score_data['filing_year'] = pd.to_datetime(score_data.filing_date).dt.year
+    history = score_data.groupby(['filing_year','form'])[['Negative_prop','Uncertainty_prop']].mean()
+    p(f"This research asks whether financial-report language changes over time and helps explain subsequent stock volatility or filing-period returns. "
+      f"It follows {audit['final_companies']} companies held by the six ARK ETFs on September 9, 2026, using {audit['final_filings']:,} eligible historical filings. "
+      'It is a study of today’s holdings through time, not the historical ARK portfolio.')
+    if end > '2025-12-31':
+        p('Filings run from 2021 through September 9, 2026. The original assignment window of 2021–2025 is reported separately; the estimates in this report use the extended window.',note=True)
+    else:
+        p('Filings run from January 1, 2021 through December 31, 2025, the assignment window. Company selection still uses the six September 9, 2026 holdings lists.',note=True)
+    h('What the percentages mean')
+    p('Uncertainty word share is the percentage of retained words that belong to the financial uncertainty dictionary, including MAY, COULD and APPROXIMATELY. '
+      'If a filing has 10,000 words and these words occur 200 times, its share is 2%: two occurrences per 100 words. Repeated uses count each time. '
+      'Negative word share counts adverse financial vocabulary in the same way.')
+    p('These percentages describe the writing. They are not the chance of a loss, a business failure or a stock-price fall. '
+      'Annual reports (10-K) and quarterly reports (10-Q) are kept separate because their contents differ. Risk-section changes and repeated text can move the shares.')
+    h('Observed word shares over time')
+    annual_rows=[]
+    for year in sorted(score_data.filing_year.unique()):
+        values={'Filing year':str(year)+(' partial' if year==2026 else '')}
+        for form,label in [('10-K','Annual'),('10-Q','Quarterly')]:
+            for category,short in [('Negative','negative'),('Uncertainty','uncertainty')]:
+                values[f'{label} {short} share']=f"{100*history.loc[(year,form),category+'_prop']:.2f}%" if (year,form) in history.index else 'Unavailable'
+        annual_rows.append(values)
+    table(pd.DataFrame(annual_rows),[63,113,113,113,113])
+    p('Each percentage is the equal-weighted average of individual filing shares in that calendar filing year. '
+      'For example, 2% means an average of two category-word occurrences per 100 words in each filing. '
+      'The companies and number of filings can vary by year; these observed averages alone do not prove a common company-level trend. '
+      + ('2026 includes only filings available through September 9 and is not a full year.' if end>'2025-12-31' else ''),note=True)
+    h('Question 1  Is the language changing')
+    first,last=2021,min(2025,max(score_data.filing_year))
+    p(f"Annual-report negative word share averages {100*history.loc[(first,'10-K'),'Negative_prop']:.2f}% in {first} and "
+      f"{100*history.loc[(last,'10-K'),'Negative_prop']:.2f}% in {last}. "
+      + ('After allowing for company differences and reporting season, both scoring methods also support an upward annual-report trend. '
+         if an.coef>0 and aw.coef>0 and an.p<.05 and aw.p<.05 else
+         'The company-adjusted statistical tests do not establish an upward annual-report trend under both scoring methods. ')
+      + 'This concerns adverse vocabulary; it does not establish that operating conditions worsened.')
+    h('Question 2  Does uncertain language precede more volatile stock returns')
+    p('We compare the language score with stock-price fluctuations over the following 60 trading days, starting on day +4 after the filing event. '
+      'We run the comparison twice: first without accounting for the stock’s prior volatility, then with it. '
+      'The second test asks whether language adds information beyond how volatile the stock already was.')
+    p(f'After prior volatility is included, the tests support an association in {significant} of {len(controlled)} comparisons: {int((controlled.p.lt(.05) & controlled.coef.gt(0)).sum())} with higher volatility and {int((controlled.p.lt(.05) & controlled.coef.lt(0)).sum())} with lower volatility. '
+      + ('The evidence does not support a consistent association across report types and scoring methods. ' if significant<len(controlled) else
+         'The association is supported across the tested report types and scoring methods. ')
+      + 'The model-by-model comparison appears in Table 5. Retrospective associations do not establish a usable trading forecast.')
+    h('Question 3  Does negative language accompany weaker stock returns')
+    p('We measure the stock’s return over four trading sessions beginning on the filing event day, minus the SPY return over the same sessions. '
+      'For illustration, if the stock gains 1% while SPY gains 2%, it underperforms by one percentage point.')
+    p(f'The return tests support an association in {ret_significant} of {len(return_tests)} comparisons: {int((return_tests.p.lt(.05) & return_tests.coef.lt(0)).sum())} with lower returns and {int((return_tests.p.lt(.05) & return_tests.coef.gt(0)).sum())} with higher returns. '
+      + ('We do not find a clear relationship in these tests, but that does not establish that the true response is zero. ' if ret_significant==0 else
+         'The supported estimates and their directions are shown separately in Table 6; a significant result is not proof that filing language caused the return. ')
+      + 'Earnings news can coincide with the filing, and the short return window limits the precision of the estimates.')
+    h('Detailed evidence and methods')
+    p('The following six tables document sample selection, language levels, word frequencies and the three research questions. '
+      'All means, trends and model estimates use the stated sample; the separate company-monitoring analysis uses same-company year-on-year comparisons.')
     p(f'Filing coverage ends on {end}; market observations end on {last_market}. '
       'Recent filings remain in text analysis even when their future price windows are unavailable. '
       'Return and volatility samples are filtered separately; both volatility specifications use the same observations. '
@@ -137,27 +190,28 @@ def main():
           'they should not be compared with completed quarters as if coverage were equal.', note=True)
 
     h('Table 1. Sample construction')
-    p('Panel A counts holding identifiers, then companies. The frozen six-fund holdings use January 2, 2026 for ARKF and ARKX '
-      'and September 4, 2026 for the other four funds. Different share classes are combined by SEC company identifier. '
-      'The holdings dates define a retrospective company universe.', note=True)
+    p('Panel A counts holding identifiers, then companies. All six holdings lists are dated September 9, 2026. Different share classes are combined by SEC company identifier. The holdings date selects today’s company universe for retrospective analysis.', note=True)
     u = universe.copy()
     u['filter'] = u['filter'].replace({'foreign_reporting_forms': '20-F / 40-F reporting companies',
-                                      'first_10x_after_sample': f'First 10-K/Q after {end}'})
+                                      'no_report_evidence': 'No qualifying report evidence by cutoff', 'first_10x_after_sample': f'First 10-K/Q after {end}'})
     table(u.rename(columns={'filter': 'Company/security filter', 'removed': 'Removed', 'remaining': 'Remaining', 'unit': 'Unit'}), [286, 57, 62, 110])
     for label, data in tables[1].groupby('sample', sort=False):
         p(f'Panel B — {label} sample. Counts follow this panel’s filter order.', note=True)
+        story[-1].keepWithNext = True
         table(data.drop(columns='sample').rename(columns={'filter': 'Filing filter', 'removed': 'Removed', 'remaining': 'Remaining', 'companies': 'Companies'}), [299, 64, 76, 76])
     p(f"{audit['amendments']} amendments and {audit['parse_failures']} parse failures are recorded. "
       f"All {audit['all_scored_filings']:,} successfully parsed original filings receive tone scores before analytical sample restrictions. "
       'Market-data restrictions do not determine the text sample.', note=True)
     page()
 
-    h('Table 2. Tone by report type')
+    h('Table 2. Observed language levels by report type')
     p('The text sample determines descriptive statistics and trends. Proportional scores are percentages; weighted scores are equation (1) sums. '
       'Document frequencies are fitted within each analytical sample and separately by report type.', note=True)
     table(tables[2][['form', 'measure', 'n', 'mean', 'sd', 'p25', 'median', 'p75']].rename(columns={
         'form': 'Form', 'measure': 'Measure', 'n': 'N', 'mean': 'Mean', 'sd': 'SD', 'p25': 'P25', 'median': 'Median', 'p75': 'P75'}),
         [38, 137, 43, 59, 59, 59, 60, 60])
+    levels = tables[2].set_index(['form','measure'])
+    p(f"Average uncertainty word share is {levels.loc[('10-K','Uncertainty words (%)'),'mean']:.2f}% in annual reports and {levels.loc[('10-Q','Uncertainty words (%)'),'mean']:.2f}% in quarterly reports. These are observed averages by report type, not a time-series increase or decrease.")
     p('Negative/uncertainty correlations (proportional, weighted): ' + '; '.join(
       f"{r['form']}: {r['prop']:.3f}, {r['tfidf']:.3f}" for r in audit['correlations']) + '.', note=True)
     h('Table 3. Most frequent dictionary words')
@@ -172,6 +226,16 @@ def main():
       f"with {audit['lexicon_overlap']} words in both categories.", note=True)
     page()
 
+    p('Percentage points (pp) measure the difference between two percentages. A rise from 2.0% to 2.5% is +0.5 percentage points, '
+      'equivalent to five more category-word occurrences per 1,000 words. It is a 25% relative increase, not a 0.5% relative increase. '
+      'The separate weighted score reduces the contribution of vocabulary used in most filings; its unit is score units, not percent.')
+    h('Statistical comparisons')
+    p('An estimated annual trend describes the average change per elapsed year after accounting for company differences and reporting season. '
+      'It is not a specific company’s latest year-on-year change. A one-standard-deviation (1 SD) difference means a difference equal to the typical spread '
+      'of language scores in that model’s sample. It is not a one-percentage-point increase in word share.')
+    p('A p value assesses how incompatible the estimate is with a zero association under the model assumptions; below 0.05 is the conventional threshold used here. '
+      'It is not the probability that a conclusion is true. A 95% confidence interval describes estimation uncertainty; an interval including zero permits either sign. '
+      'Regression results are estimated associations, not observed before-and-after changes or proof of causality.')
     h('Tone measures')
     p('The Loughran–McDonald Master Dictionary, 1993–2025 release, was updated in March 2026. '
       'A positive category value identifies an active word; a negative value records removal from that category. '
@@ -199,8 +263,25 @@ def main():
     p(f'MAY and COULD account for {modal_share:.1f}% of uncertainty tokens. '
       'These counts do not distinguish recurring disclosure language from newly expressed uncertainty. '
       'High negative/uncertainty correlations also mean the two measures do not provide independent evidence.')
-    p(f"MAY occurs in {audit['uncertainty_word_document_pct']['MAY']:.1f}% of filings and APPROXIMATELY in "
-      f"{audit['uncertainty_word_document_pct']['APPROXIMATELY']:.1f}%. Inverse document frequency gives less weight to words appearing in most documents.", note=True)
+    p(f"MAY occurs in {audit['uncertainty_word_document_pct']['MAY']:.3f}% of filings and APPROXIMATELY in "
+      f"{audit['uncertainty_word_document_pct']['APPROXIMATELY']:.3f}%. MAY therefore has inverse-document-frequency weight ln(N/N) = 0: its count contributes to word share but contributes nothing to the weighted score. APPROXIMATELY receives a small positive weight. This removes vocabulary that provides little information about which document is being read; it does not determine whether the remaining language predicts stock outcomes.")
+
+    h('Effect of weighting on filing rankings')
+    score_data = pd.read_csv(out / 'text_sample.csv')
+    weight_stats = {}
+    for category in ['Negative', 'Uncertainty']:
+        share_rank = score_data[category + '_prop'].rank(pct=True)
+        weighted_rank = score_data[category + '_tfidf'].rank(pct=True)
+        weight_stats[category] = (share_rank.corr(weighted_rank), 100 * (share_rank - weighted_rank).abs().mean())
+    p(f"Across the same {len(score_data):,} filings with pooled text-sample weights, the rank correlation between word share and weighted score is "
+      f"{weight_stats['Uncertainty'][0]:.3f} for uncertainty and {weight_stats['Negative'][0]:.3f} for negative language. "
+      'A rank correlation of 1 means the methods order filings identically; lower values indicate greater reordering. '
+      'This compares two ways of measuring the same category, not negative language against uncertainty.')
+    p(f"The average absolute movement in percentile position is {weight_stats['Uncertainty'][1]:.2f} points for uncertainty and "
+      f"{weight_stats['Negative'][1]:.2f} for negative language. Moving from the 80th to the 60th percentile would be a 20-point movement; "
+      'these units describe rank position, not a change in word share. '
+      + ('Weighting changes uncertainty rankings more in this sample. ' if weight_stats['Uncertainty'][1] > weight_stats['Negative'][1] else 'Weighting does not change uncertainty rankings more in this sample. ')
+      + 'This compares ranking sensitivity and does not by itself demonstrate better prediction.')
 
     h('Figure 1. Quarterly tone and VIX')
     image = Image(str(out / 'figure1.png'))
@@ -219,7 +300,7 @@ def main():
       'Formal trend inference uses Table 4.', note=True)
     page()
 
-    h('Table 4. Annual tone trends')
+    h('Table 4. Estimated language change per year')
     p('Quarter-level means estimate the aggregate trend. Filing-level models estimate change within companies:')
     equation(r'\bar T_q=\alpha+\beta\tau_q+\sum_{s=2}^{4}\delta_sD_{sq}+\varepsilon_q',
              r'T_{iq}=\alpha_i+\beta\tau_q+\sum_{s=2}^{4}\delta_sD_{sq}+\theta K_{iq}+\varepsilon_{iq}')
@@ -237,7 +318,7 @@ def main():
             trendrows.append({'Sample': form, 'Measure': tone.replace('Negative', 'Neg.').replace('Uncertainty', 'Unc.').replace('_prop', ' %').replace('_tfidf', ' tf.idf'),
                               'Agg. slope': ols.coef*mult, 'OLS t': ols.t, 'NW t': hac.t, 'Within slope': within.coef*mult, 'Within t': within.t, 'p': within.p})
     table(pd.DataFrame(trendrows), [39, 86, 70, 52, 52, 83, 68, 65])
-    p('Proportional slopes are percentage points per year; weighted slopes are score units per year. ' + cluster_note(4, 'within_firm_trend', 'Negative_prop'), note=True)
+    p('All combines annual and quarterly reports. Neg. and Unc. mean negative and uncertainty language; % identifies word share, and tf.idf identifies the weighted score. Agg. means the quarterly-average model; Within means the company-adjusted model. OLS and NW t are alternative statistical test values. Proportional slopes are percentage points per year; weighted slopes are score units per year. ' + cluster_note(4, 'within_firm_trend', 'Negative_prop'), note=True)
     for form in ['10-K', '10-Q']:
         n = row(4, form, 'Negative_prop', 'within_firm_trend')
         u = row(4, form, 'Uncertainty_prop', 'within_firm_trend')
@@ -274,8 +355,19 @@ def main():
       'The bracketed pre-volatility term is included or omitted in the paired volatility tests; it is always included in the return tests. '
       'The 10-K indicator K applies only to the pooled sample. No winsorisation is applied.', note=True)
 
+    h('Comparison before and after controlling prior stock volatility')
+    overview = []
+    for tone, label in [('Uncertainty_prop','Word share'), ('Uncertainty_tfidf','Weighted score')]:
+        a = row(5,'All',tone,'volatility_without_prevol')
+        b = row(5,'All',tone,'volatility_with_prevol')
+        overview.append({'Language measure':label,'Without prior volatility':f'{100*a.effect_1sd:+.2f} pp; p {p_value(a.p)}',
+                         'With prior volatility':f'{100*b.effect_1sd:+.2f} pp; p {p_value(b.p)}'})
+    table(pd.DataFrame(overview),[135,190,190])
+    p('Each number is the estimated difference in annualised stock volatility associated with a 1 SD higher uncertainty score. '
+      'The two columns compare model specifications, not earlier and later stock volatility. A +1 pp effect would mean, for example, '
+      'an estimated 40% versus 41% annualised volatility, with other model variables held fixed; those levels are illustrative.')
     h('Table 5. Uncertainty and subsequent volatility')
-    p('Dependent variable: annualised volatility as a fraction. Coefficients are per unit of uncertainty fraction or weighted score. '
+    p('All combines report types; prop means word share, tfidf means weighted score, and Pre-vol identifies whether prior volatility is controlled. N is the number of filings. The coefficient is the model slope, while t and p describe its statistical evidence. Dependent variable: annualised volatility as a fraction. Coefficients are per unit of uncertainty fraction or weighted score. '
       'Both specifications use the same complete observations within each sample. Two-way company/quarter clustering determines t and p. '
       + cluster_note(5, 'volatility_with_prevol', 'Uncertainty_prop'), note=True)
     vol = tables[5][tables[5].inference.eq('firm_quarter_cluster')].copy()
@@ -300,18 +392,20 @@ def main():
       'Differences across weighting schemes and multiple unadjusted tests limit the strength of an isolated significant association.')
     page()
 
+    story.append(PageBreak())
     h('Table 6. Negative sentiment and filing-period excess return')
     p('Dependent variable: SPY-adjusted four-session buy-and-hold return as a fraction. All models include log size, log dollar volume, '
       'prior excess return, pre-filing volatility, company effects and calendar-quarter effects; pooled models also include the 10-K indicator. '
       'Coefficients are per unit of negative-word fraction or weighted score. t and p use two-way company/quarter clustering. '
       + cluster_note(6, 'filing_return', 'Negative_prop'), note=True)
+    story[-1].keepWithNext = True
     ret = tables[6][tables[6].inference.eq('firm_quarter_cluster')].copy()
     ret['Measure'] = ret.measure.str.replace('Negative_', '', regex=False)
     ret['Effect pp'] = 100*ret.effect_1sd
     ret['MDE pp'] = 100*ret.mde80_1sd
     table(ret[['sample', 'Measure', 'coef', 't', 'p', 'Effect pp', 'MDE pp', 'n']].rename(columns={'sample': 'Sample', 'coef': 'Coef.', 'n': 'N'}), [43, 55, 83, 52, 69, 74, 74, 65])
     equation(r'\mathrm{MDE}^{\mathrm{pp}}_{80,1\mathrm{SD}}=100\left(t_{0.975,\nu}+\Phi^{-1}(0.8)\right)\mathrm{SE}(\hat\beta)\,s_{\mathrm{tone}}')
-    p('Effect and minimum detectable effect (MDE) are return percentage points per one tone standard deviation. '
+    p('All combines report types; prop means word share and tfidf means weighted score. N counts filings. Coef. is the model slope and t is its statistical test value. Effect and minimum detectable effect (MDE) are return percentage points per one tone standard deviation. '
       'MDE approximates 80% power for a two-sided 5% test using the stated inference degrees of freedom. '
       'It measures precision rather than observed power.', note=True)
     for form in FORMS:
@@ -336,11 +430,6 @@ def main():
       'These receive more weight than results that depend on the weighting scheme, although the two measures are correlated. '
       'Volatility associations assess incremental information after existing risk is controlled; short-window returns have separate precision and earnings-overlap limitations.')
 
-    for label, tone in [('Negative', 'Negative words (%)'), ('Uncertainty', 'Uncertainty words (%)')]:
-        vals = tables[2][tables[2].measure.eq(tone)].set_index('form')
-        p(f"{label} proportional-score SD is {vals.loc['10-K', 'sd']:.3f} percentage points for 10-Ks and "
-          f"{vals.loc['10-Q', 'sd']:.3f} for 10-Qs. Report length, repeated language and changing content may affect dispersion; "
-          'this analysis does not identify their separate contributions.')
     p('10-Ks provide annual business and risk disclosures, while 10-Qs provide quarterly updates. '
       'More words do not necessarily imply more new information. Different significance levels across forms do not establish that coefficients differ.')
     one = tables[4][tables[4].inference.eq('firm_cluster')]
@@ -352,15 +441,7 @@ def main():
     p(f'{changed} of {int(eligible.sum())} estimable within-company trend tests change 5% significance between company-only and two-way clustering. '
       f"The two-way estimates use {', '.join(map(str, n_quarters))} time clusters across samples, so finite-sample inference remains approximate. "
       'All four tone trends, both volatility specifications and both return measures are reported for pooled and separate report-type samples.')
-    survivor_path = out / 'survivorship.json'
-    if not survivor_path.exists():
-        survivor_path = ROOT / 'outputs' / 'survivorship.json'
-    if survivor_path.exists():
-        s = json.loads(survivor_path.read_text())
-        p(f"Of {s['early_unique_security_keys']} distinct securities held on May 6, 2021, {s['absent_security_keys']} "
-          f"({100*s['absent_security_keys']/s['early_unique_security_keys']:.1f}%) do not match the frozen 2026 holdings by normalized ticker or valid CUSIP. "
-          'Identity changes, mergers and share classes mean these absences do not all represent company failures.')
-    p('The 2026 holdings selection, mixed holdings dates and incomplete historical identifiers limit generalisation. '
+    p('Selection from September 9, 2026 holdings limits generalisation beyond today’s selected companies. '
       'Market-window and share-count availability impose additional selection on the outcome samples. '
       'Full-corpus word weights use later filings and the current dictionary is applied retrospectively. '
       'The estimates therefore describe retrospective conditional associations, not causal effects or an implementable live strategy.')
@@ -375,16 +456,16 @@ def main():
 
     def footer(canvas, doc):
         canvas.setFont('Helvetica', 7)
-        canvas.setFillColor(colors.HexColor('#666666'))
+        canvas.setFillColor(colors.HexColor('#676777'))
         canvas.drawString(40, 22, 'Uncertainty and sentiment · ' + period)
         canvas.drawRightString(A4[0]-40, 22, str(doc.page))
 
-    doc = SimpleDocTemplate(str(out / 'report.pdf'), pagesize=A4, rightMargin=40, leftMargin=40,
+    doc = SimpleDocTemplate(str(out / f'ARK_Holdings_Sentiment_and_Uncertainty_Report_{end}.pdf'), pagesize=A4, rightMargin=40, leftMargin=40,
                             topMargin=34, bottomMargin=35, title='Uncertainty and sentiment in financial reports', author='')
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text('# Uncertainty and sentiment in financial reports\n\n' + '\n'.join(md))
-    print(out / 'report.pdf')
+    print(out / f'ARK_Holdings_Sentiment_and_Uncertainty_Report_{end}.pdf')
 
 
 if __name__ == '__main__':

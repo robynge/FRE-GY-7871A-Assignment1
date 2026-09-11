@@ -1,15 +1,22 @@
-"""Retrieve the unchanged course snapshot without distributing data in Git."""
+"""Retrieve the six dated snapshots defining the current-holdings study."""
 from pathlib import Path
-import hashlib
-import requests
+import sys
+import subprocess
+import pandas as pd
 ROOT=Path(__file__).resolve().parents[1]
-URL='https://raw.githubusercontent.com/anmolsingh0219/FRE-GY-7871A-Assignment1/532c65cf91cdf62a8d37c9bbe6ff0961c152d756/data/universe/ark_holdings_raw.csv'
-SHA256='16697ed3f42ab79c1ea5fca55edbdb7f567c6dcbe4427fe54ef752baa67a397a'
+sys.path.insert(0,str(ROOT))
+from src.config import ARK_FUNDS,AS_OF_DATE
 if __name__=='__main__':
-    path=ROOT/'data/universe/ark_holdings_raw.csv'
-    data=path.read_bytes() if path.exists() else requests.get(URL,timeout=60).content
-    if hashlib.sha256(data).hexdigest()!=SHA256:
-        raise RuntimeError('Holdings checksum differs from the course snapshot; inspect before proceeding')
-    path.parent.mkdir(parents=True,exist_ok=True)
-    path.write_bytes(data)
-    print('Course holdings snapshot verified.')
+ folder=ROOT/'data/current_holdings';folder.mkdir(exist_ok=True)
+ frames=[]
+ for fund in ARK_FUNDS:
+  name=f'{fund}_Holdings_{AS_OF_DATE}.csv';path=folder/name
+  if not path.exists():
+   remote=f'repos/robynge/ark-routine/contents/data/holdings/{AS_OF_DATE[:4]}/{AS_OF_DATE}/{name}?ref=main'
+   path.write_bytes(subprocess.check_output(['gh','api',remote,'-H','Accept: application/vnd.github.raw+json']))
+  frame=pd.read_csv(path);dates=pd.to_datetime(frame.date,format='%m/%d/%Y',errors='coerce')
+  assert set(dates.dropna().dt.strftime('%Y-%m-%d'))=={AS_OF_DATE},'Source date differs from requested holdings date'
+  assert frame.loc[dates.notna(),'fund'].eq(fund).all()
+  frames.append(frame.loc[dates.notna()])
+ pd.concat(frames,ignore_index=True).to_csv(ROOT/'data/universe/ark_holdings_raw.csv',index=False)
+ print(f'Six holdings snapshots dated {AS_OF_DATE} saved.')

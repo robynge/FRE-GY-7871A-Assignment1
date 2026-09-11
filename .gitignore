@@ -4,6 +4,8 @@ data/**
 !data/
 !data/*/
 !data/**/.gitkeep
+# The Nasdaq-100 constituent list has no download script; the ARK snapshot does.
+!data/universe/ndx_holdings_raw.csv
 
 __pycache__/
 *.pyc
@@ -12,17 +14,20 @@ __pycache__/
 venv/
 .env
 .DS_Store
+node_modules
 outputs/*
 !outputs/.gitkeep
-!outputs/report.pdf
+!outputs/Filing_Tone_and_Risk_Factor_Disclosure.pdf
+!outputs/REPORT.md
+!outputs/ARK_vs_Nasdaq100_Filing_Language.xlsx
+!outputs/report_figures/
 !outputs/figure1.png
 
 # Instructor-built data archive, distributed as a GitHub Release asset
 ark_filings_*.tar.gz
 download.log
 
-# Only share the report and figure for the original assignment date window.
+# The original assignment window keeps its figure; its tables are in the workbook.
 !outputs/course_2021_2025/
 outputs/course_2021_2025/*
-!outputs/course_2021_2025/report.pdf
 !outputs/course_2021_2025/figure1.png

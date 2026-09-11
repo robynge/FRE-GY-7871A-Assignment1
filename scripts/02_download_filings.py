@@ -73,11 +73,14 @@ def main() -> int:
     TEXT_DIR.mkdir(parents=True, exist_ok=True)
     universe = pd.read_csv(UNIVERSE_DIR / "universe.csv", dtype={"cik": str})
     universe = universe[universe["status"] == "domestic_filer"]
+    current_ciks = set(universe.cik.astype(str).str.zfill(10))
     if args.limit:
         universe = universe.head(args.limit)
     print(f"{len(universe)} filers")
     rows = _load_records(META_PATH)
     manifest = _load_records(MANIFEST_PATH)
+    rows = {k:r for k,r in rows.items() if str(r.get("cik", "")).zfill(10) in current_ciks}
+    manifest = {k:r for k,r in manifest.items() if str(r.get("cik", "")).zfill(10) in current_ciks}
     if universe.empty:
         checkpoint(rows, manifest)
         print("ERROR: no domestic filers; no corpus was acquired.", file=sys.stderr)

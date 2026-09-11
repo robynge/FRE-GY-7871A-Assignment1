@@ -1,0 +1,103 @@
+rank,company,ticker,weight
+1,Nvidia Corp,NVDA,13.01%
+2,Apple Inc.,AAPL,11.08%
+3,Microsoft Corp,MSFT,8.79%
+4,Amazon.Com Inc,AMZN,6.56%
+5,Alphabet Inc. Class A Common Stock,GOOGL,5.01%
+6,Alphabet Inc. Class C Capital Stock,GOOG,4.69%
+7,Space Exploration Technologies Corp. Class A Common Stock,SPCX,4.68%
+8,Broadcom Inc. Common Stock,AVGO,4.17%
+9,Meta Platforms Inc. Class A Common Stock,META,4.01%
+10,Tesla Inc. Common Stock,TSLA,3.50%
+11,Micron Technology Inc.,MU,2.80%
+12,Advanced Micro Devices,AMD,2.05%
+13,Walmart Inc. Common Stock,WMT,2.02%
+14,ASML Holding NV,ASML,1.60%
+15,Intel Corp,INTC,1.35%
+16,Cisco Systems Inc. Common Stock (DE),CSCO,1.04%
+17,Palantir Technologies Inc. Class A Common Stock,PLTR,0.98%
+18,Costco Wholesale Corp,COST,0.96%
+19,Lam Research Corp,LRCX,0.95%
+20,Applied Materials Inc,AMAT,0.90%
+21,NetFlix Inc,NFLX,0.76%
+22,Arm Holdings plc American Depositary Shares,ARM,0.68%
+23,Palo Alto Networks Inc. Common Stock,PANW,0.66%
+24,Sandisk Corporation Common Stock,SNDK,0.62%
+25,KLA Corporation Common Stock,KLAC,0.58%
+26,Texas Instruments Incorporated,TXN,0.58%
+27,Linde plc Ordinary Share,LIN,0.52%
+28,CrowdStrike Holdings Inc. Class A Common Stock,CRWD,0.51%
+29,Amgen Inc,AMGN,0.51%
+30,Marvell Technology Inc. Common Stock,MRVL,0.51%
+31,Seagate Technology Holdings PLC Ordinary Shares (Ireland),STX,0.48%
+32,T-Mobile US Inc.,TMUS,0.46%
+33,Qualcomm Inc,QCOM,0.45%
+34,PepsiCo Inc.,PEP,0.45%
+35,Gilead Sciences Inc,GILD,0.43%
+36,Analog Devices Inc.,ADI,0.43%
+37,Western Digital Corp.,WDC,0.42%
+38,Shopify Inc. Class A subordinate voting shares,SHOP,0.39%
+39,Vertex Pharmaceuticals Inc,VRTX,0.32%
+40,Booking Holdings Inc. Common Stock,BKNG,0.31%
+41,Intuitive Surgical Inc.,ISRG,0.30%
+42,Fortinet Inc.,FTNT,0.28%
+43,Starbucks Corp,SBUX,0.27%
+44,PDD Holdings Inc. American Depositary Shares,PDD,0.27%
+45,Automatic Data Processing,ADP,0.25%
+46,Constellation Energy Corporation Common Stock,CEG,0.25%
+47,Applovin Corporation Class A Common Stock,APP,0.25%
+48,Adobe Inc.,ADBE,0.24%
+49,Airbnb Inc. Class A Common Stock,ABNB,0.24%
+50,Mercado Libre Inc,MELI,0.23%
+51,CSX Corporation,CSX,0.22%
+52,Lumentum Holdings Inc. Common Stock,LITE,0.21%
+53,Comcast Corp,CMCSA,0.21%
+54,Marriott International Class A Common Stock,MAR,0.21%
+55,Intuit Inc,INTU,0.21%
+56,DoorDash Inc. Class A Common Stock,DASH,0.21%
+57,Monster Beverage Corporation,MNST,0.20%
+58,Regeneron Pharmaceuticals Inc,REGN,0.20%
+59,Datadog Inc. Class A Common Stock,DDOG,0.19%
+60,Cintas Corp,CTAS,0.19%
+61,Mondelez International Inc. Class A,MDLZ,0.19%
+62,Cadence Design Systems,CDNS,0.19%
+63,Synopsys Inc,SNPS,0.18%
+64,Ross Stores Inc,ROST,0.17%
+65,Warner Bros. Discovery Inc. Series A Common Stock,WBD,0.17%
+66,O'Reilly Automotive Inc.,ORLY,0.17%
+67,American Electric Power Company Inc.,AEP,0.16%
+68,Nebius Group N.V. Class A Ordinary Shares,NBIS,0.16%
+69,Honeywell International Inc.,HON,0.16%
+70,Paccar Inc,PCAR,0.15%
+71,Baker Hughes Company,BKR,0.15%
+72,Teradyne Inc. Common Stock,TER,0.14%
+73,Monolithic Power Systems Inc.,MPWR,0.14%
+74,Diamondback Energy Inc.,FANG,0.14%
+75,NXP Semiconductors N.V.,NXPI,0.14%
+76,Fastenal Co,FAST,0.13%
+77,Strategy Inc Common Stock Class A,MSTR,0.13%
+78,CoreWeave Inc. Class A Common Stock,CRWV,0.13%
+79,Astera Labs Inc. Common Stock,ALAB,0.13%
+80,Honeywell Aerospace Inc. Common Stock,HONA,0.12%
+81,Xcel Energy Inc.,XEL,0.11%
+82,Coca-Cola Europacific Partners plc Ordinary Shares,CCEP,0.11%
+83,Exelon Corporation,EXC,0.11%
+84,Workday Inc. Class A Common Stock,WDAY,0.11%
+85,PayPal Holdings Inc. Common Stock,PYPL,0.11%
+86,Keurig Dr Pepper Inc.,KDP,0.11%
+87,Autodesk Inc,ADSK,0.10%
+88,Thomson Reuters Corporation Common Shares,TRI,0.10%
+89,Paychex Inc,PAYX,0.10%
+90,Ferrovial N.V. Ordinary Shares,FER,0.10%
+91,Idexx Laboratories Inc,IDXX,0.10%
+92,Rocket Lab Corporation Common Stock,RKLB,0.10%
+93,Axon Enterprise Inc. Common Stock,AXON,0.10%
+94,Microchip Technology Inc,MCHP,0.10%
+95,Take-Two Interactive Software Inc,TTWO,0.10%
+96,Roper Technologies Inc. Common Stock,ROP,0.09%
+97,Old Dominion Freight Line,ODFL,0.09%
+98,Alnylam Pharmaceuticals Inc.,ALNY,0.08%
+99,DexCom Inc.,DXCM,0.08%
+100,Copart Inc,CPRT,0.07%
+101,GE HealthCare Technologies Inc. Common Stock,GEHC,0.07%
+102,The Kraft Heinz Company Common Stock,KHC,0.07%

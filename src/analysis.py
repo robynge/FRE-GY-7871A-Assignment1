@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import pandas_market_calendars as mcal
 from .config import (ROOT, INTERIM_DIR, PRICE_DIR, OUTPUT_DIR, UNIVERSE_DIR,
-                     SAMPLE_START, SAMPLE_END, AS_OF_DATE, MARKET_END)
+                     SAMPLE_START, SAMPLE_END, AS_OF_DATE, MARKET_END,
+                     holdings_group, in_group)
 from .events import event_variables
 from .lexicons import load_all
 from .parse import tokenize
@@ -23,9 +24,27 @@ def _prices(name):
     return pd.read_csv(PRICE_DIR / name, index_col=0, parse_dates=True).sort_index()
 
 
-def _prepare_samples(sample_end=SAMPLE_END):
+def select_group(frame, group, column="funds"):
+    """Restrict a universe or candidate frame to one side of the comparison.
+
+    "ARK" and "NDX" include the companies held by both, because both portfolios
+    really do hold them. "ARK_ONLY" and "NDX_ONLY" drop the overlap, for the
+    robustness cut where the two samples must not share companies.
+    """
+    if group is None:
+        return frame
+    if group.endswith("_ONLY"):
+        return frame[frame[column].map(holdings_group).eq(group[:-5])]
+    return frame[frame[column].map(lambda f: in_group(f, group))]
+
+
+def _prepare_samples(sample_end=SAMPLE_END, group=None):
     manifest = pd.read_csv(INTERIM_DIR / "filings_manifest.csv", dtype={"cik": str})
     universe = pd.read_csv(UNIVERSE_DIR / "universe.csv", dtype={"cik": str})
+    universe = select_group(universe, group)
+    if group is not None:
+        keep = set(universe.cik.astype(str).str.zfill(10))
+        manifest = manifest[manifest.cik.astype(str).str.zfill(10).isin(keep)].copy()
     expected = universe.loc[universe.status.eq("domestic_filer"), ["n_10k", "n_10q"]].sum().sum()
     if manifest.status.isin(["listing_failed", "download_failed", "not_attempted"]).any():
         raise RuntimeError("Acquisition is incomplete; resolve manifest errors before analysis")
@@ -103,6 +122,7 @@ def _prepare_samples(sample_end=SAMPLE_END):
         record("Complete liquidity and model controls",before,d,name)
         samples[kind] = d
     audit = {"sample_start":SAMPLE_START,"sample_end":sample_end,"as_of_date":AS_OF_DATE,
+             "group":group or "ALL",
              "market_last_date":str(market_last.date()),
              "period_incomplete":pd.Timestamp(sample_end).normalize() < pd.Period(sample_end,"Q").end_time.normalize(),
              "day0_moved_before_market_filters":int(data.day0_moved.sum()),
@@ -119,9 +139,9 @@ def _prepare_samples(sample_end=SAMPLE_END):
     return all_parsed,data,samples["volatility"],samples["return"],pd.DataFrame(waterfall),audit
 
 
-def construct_sample(sample_end=SAMPLE_END):
+def construct_sample(sample_end=SAMPLE_END, group=None):
     """Compatibility entry point for the complete volatility sample and its filters."""
-    _,text,vol,ret,waterfall,audit = _prepare_samples(sample_end)
+    _,text,vol,ret,waterfall,audit = _prepare_samples(sample_end, group)
     audit = dict(audit, final_filings=len(vol), final_companies=vol.cik.nunique())
     return vol,waterfall[waterfall["sample"].isin(["Text","Volatility"])].reset_index(drop=True),audit
 
@@ -154,7 +174,7 @@ def figure_one(data, vix, path, sample_end=SAMPLE_END):
     vixq=vix.groupby(vix.index.to_period("Q").astype(str)).mean().reindex(quarters)
     for ax,tone in zip(axes.flat,MEASURES):
         scale=100 if tone.endswith("prop") else 1
-        for form,color in [("10-K","#174A72"),("10-Q","#C16B32")]:
+        for form,color in [("10-K","#8264FF"),("10-Q","#0A0A23")]:
             d=data[data.form.eq(form)].copy()
             d["adjusted_tone"]=d[tone]-d.groupby("cik")[tone].transform("mean")+d[tone].mean()
             series=d.groupby("quarter").adjusted_tone.mean().reindex(quarters)*scale
@@ -180,10 +200,10 @@ def figure_one(data, vix, path, sample_end=SAMPLE_END):
     plt.close(fig)
 
 
-def run_analysis(sample_end=SAMPLE_END, output_dir=OUTPUT_DIR):
+def run_analysis(sample_end=SAMPLE_END, output_dir=OUTPUT_DIR, group=None):
     output_dir=Path(output_dir)
     output_dir.mkdir(parents=True,exist_ok=True)
-    all_parsed,data,vol_data,ret_data,waterfall,audit=_prepare_samples(sample_end)
+    all_parsed,data,vol_data,ret_data,waterfall,audit=_prepare_samples(sample_end,group)
     if data.empty:
         raise RuntimeError("No complete observations; cannot manufacture results")
     lexicons={k:v for k,v in load_all().items() if k in ["Negative","Uncertainty"]}
@@ -195,10 +215,10 @@ def run_analysis(sample_end=SAMPLE_END, output_dir=OUTPUT_DIR):
     data.to_csv(output_dir/"text_sample.csv",index=False)
     for name,d in [("volatility",vol_data),("return",ret_data)]:
         score_sample(d,[count_map[a] for a in d.accession],lexicons).to_csv(output_dir/f"{name}_sample.csv",index=False)
-    if output_dir == OUTPUT_DIR:
+    if output_dir == OUTPUT_DIR and group is None:
         data.to_csv(INTERIM_DIR/"analysis_sample.csv",index=False)
     waterfall.to_csv(output_dir/"table1.csv",index=False)
-    candidates=pd.read_csv(UNIVERSE_DIR/"holdings_candidates.csv",dtype={"cik":str})
+    candidates=select_group(pd.read_csv(UNIVERSE_DIR/"holdings_candidates.csv",dtype={"cik":str}),group)
     remaining=len(candidates)
     company_rows=[{"filter":"Raw holding identifiers", "removed":0, "remaining":remaining,"unit":"identifiers"}]
     for status,label in [("non_company_security","Funds and non-company securities"),
@@ -208,7 +228,7 @@ def run_analysis(sample_end=SAMPLE_END, output_dir=OUTPUT_DIR):
         company_rows.append({"filter":label,"removed":removed,"remaining":remaining,"unit":"identifiers"})
     unique=candidates.cik.nunique()
     company_rows.append({"filter":"Combine share classes by company CIK","removed":remaining-unique,"remaining":unique,"unit":"companies"})
-    universe=pd.read_csv(UNIVERSE_DIR/"universe.csv",dtype={"cik":str})
+    universe=select_group(pd.read_csv(UNIVERSE_DIR/"universe.csv",dtype={"cik":str}),group)
     remaining=unique
     eligible_ciks=set(all_parsed.cik)
     excluded=universe[~universe.cik.isin(eligible_ciks)].copy()

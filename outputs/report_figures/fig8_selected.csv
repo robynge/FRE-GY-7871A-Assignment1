@@ -1,0 +1,3 @@
+ticker,filing_date,prev_risk_words,risk_words,risk_words_change,transition
+PRME,2023-08-07,49292.0,75,-49217.0,to_reference
+TXG,2025-05-09,52.0,39630,39578.0,to_full

@@ -153,6 +153,45 @@ def trend_tests(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# An indicator identified by a handful of switches is fitted through those few
+# rows once firm and quarter effects are in the model. One 10-K in this corpus
+# stops restating its risk factors, and estimating on it returns a very large
+# coefficient at p < 0.001. Report such a design as unidentified, not as a result.
+MIN_TREATED = 10
+
+
+def focal_test(df: pd.DataFrame, outcome: str, focal: str, controls: list[str],
+               effects=("cik", "quarter"), form=True, model="custom",
+               inference="firm_quarter_cluster", min_treated=MIN_TREATED) -> dict:
+    """One regression with a named focal regressor, on the complete-case sample.
+
+    Same estimator, fixed effects and clustered inference as the assignment's
+    own outcome tests; only the focal variable and control list are the caller's.
+    Use it for regressors the assignment does not name, such as a disclosure
+    switch indicator or a risk-section-excluded tone measure.
+
+    A two-valued focal regressor also reports how many rows carry its minority
+    value, and is refused when too few of them exist to estimate anything.
+    """
+    numeric = [outcome, focal] + [c for c in controls if c not in (outcome, focal)]
+    # "quarter" is kept whether or not it is a fixed effect: two-way clustering
+    # needs the column even when the model uses firm effects alone.
+    categorical = list(dict.fromkeys(list(effects) + ["cik", "quarter", "form"]))
+    data = _complete(df, numeric, [c for c in categorical if c in df.columns])
+    predictors = [focal] + [c for c in controls if c not in (outcome, focal)]
+    row = _estimate(data, outcome, predictors, tuple(effects), form, focal, model, inference)
+    row["measure"] = focal
+    row["n_treated"] = np.nan
+    if not data.empty and data[focal].nunique() == 2:
+        counts = data[focal].value_counts()
+        row["n_treated"] = int(counts.min())
+        if counts.min() < min_treated:
+            blank = ["coef", "se", "t", "p", "ci_low", "ci_high", "mde80", "r_squared"]
+            row.update({key: np.nan for key in blank})
+            row["status"] = f"under_{min_treated}_in_smaller_group"
+    return row
+
+
 def outcome_tests(df: pd.DataFrame, kind=None) -> pd.DataFrame:
     """Tone coefficients for volatility and sentiment-return regressions.
 

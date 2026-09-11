@@ -1,6 +1,6 @@
 """Build unique SEC company universe and preserve a full holdings audit.
 
-The default uses the teacher's frozen snapshot. --refresh stores a separate live
+The default uses the dated current-holdings snapshot. --refresh stores a separate live
 snapshot and never overwrites ark_holdings_raw.csv. Candidate exclusions are
 company/security exclusions, not subsequent filing-level analysis filters.
 """
@@ -16,7 +16,10 @@ from pathlib import Path
 import pandas as pd
 import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.config import ARK_FUNDS, SAMPLE_END, SAMPLE_START, SEC_USER_AGENT, UNIVERSE_DIR
+from src.config import (
+    ARK_FUNDS, HOLDING_FUND_LABELS, SAMPLE_END, SAMPLE_START, SEC_USER_AGENT,
+    UNIVERSE_DIR,
+)
 from src.edgar import EdgarClient
 
 ARK_CSV_BASE = "https://assets.ark-funds.com/fund-documents/funds-etf-csv/"
@@ -164,7 +167,7 @@ def enrich_no10x(universe: pd.DataFrame, cache_dir: Path) -> pd.DataFrame:
 
 def comparison_positions(frame: pd.DataFrame) -> pd.DataFrame:
     """Exclude footer lines and positions without ticker on a consistent basis."""
-    valid = (frame["fund"].isin(ARK_FUNDS)
+    valid = (frame["fund"].isin(HOLDING_FUND_LABELS)
              & frame["ticker"].fillna("").str.strip().ne("")
              & pd.to_datetime(frame["date"], format="%m/%d/%Y", errors="coerce").notna())
     return frame[valid].copy()
@@ -197,17 +200,25 @@ def write_comparison(raw: pd.DataFrame) -> None:
     output.write_text(text)
 
 
+CIK_OVERRIDES = {"SE": "0001703399", "KMTUY": "0000056594", "BYDDY": "0001445162"}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--refresh", action="store_true", help="use separately saved live holdings")
+    ap.add_argument("--holdings", type=Path, default=RAW_PATH,
+                    help="dated holdings snapshot to build from; defaults to the ARK snapshot")
     args = ap.parse_args()
-    if not args.refresh and not RAW_PATH.exists():
-        raise FileNotFoundError(f"Frozen snapshot missing: {RAW_PATH}; use --refresh explicitly")
-    raw = refresh_holdings() if args.refresh else pd.read_csv(RAW_PATH)
-    write_comparison(raw)
+    raw_path = args.holdings
+    if not args.refresh and not raw_path.exists():
+        raise FileNotFoundError(f"Dated holdings snapshot missing: {raw_path}; use --refresh explicitly")
+    raw = refresh_holdings() if args.refresh else pd.read_csv(raw_path)
+    raw = comparison_positions(raw)
     raw.to_csv(UNIVERSE_DIR / "holdings_positions.csv", index=False)
     client = EdgarClient(SEC_USER_AGENT or None)
-    candidates = build_candidates(raw, client.ticker_to_cik())
+    cik_map = client.ticker_to_cik()
+    cik_map.update(CIK_OVERRIDES)
+    candidates = build_candidates(raw, cik_map)
     candidates.to_csv(UNIVERSE_DIR / "holdings_candidates.csv", index=False)
     universe = build_universe(candidates, client)
     universe.to_csv(OUT_PATH, index=False)

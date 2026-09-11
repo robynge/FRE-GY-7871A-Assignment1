@@ -38,6 +38,35 @@ SEC_MAX_REQUESTS_PER_SEC = 6.0  # below the SEC's limit of 10, on purpose
 # ----------------------------------------------------------------------------
 ARK_FUNDS = ["ARKK", "ARKQ", "ARKW", "ARKF", "ARKG", "ARKX"]
 
+# Benchmark index used as the comparison group. The Nasdaq-100 constituents are
+# carried through the same holdings schema as the ARK funds so that one audited
+# universe build covers both groups; membership is recoverable from the `funds`
+# column afterwards. QQQ tracks this index, so QQQ is not a separate group.
+INDEX_LABELS = ["NDX"]
+HOLDING_FUND_LABELS = ARK_FUNDS + INDEX_LABELS
+
+
+def holdings_group(funds: str) -> str:
+    """Which side of the comparison a company sits on: ARK, NDX, or BOTH.
+
+    `funds` is the pipe-joined fund column carried through the universe and
+    candidate files. Companies held by an ARK fund and also in the index are
+    labelled BOTH; they belong to each group when a group is selected, so that
+    neither side is silently made unrepresentative by the overlap.
+    """
+    labels = set(str(funds).split("|"))
+    in_ark = bool(labels & set(ARK_FUNDS))
+    in_index = bool(labels & set(INDEX_LABELS))
+    if in_ark and in_index:
+        return "BOTH"
+    return "ARK" if in_ark else "NDX"
+
+
+def in_group(funds: str, group: str) -> bool:
+    """True when a company belongs to the named group, overlap included."""
+    label = holdings_group(funds)
+    return label == group or label == "BOTH" and group in ("ARK", "NDX")
+
 SAMPLE_START = "2021-01-01"          # filing date, inclusive
 SAMPLE_END = "2026-09-09"            # filing date, inclusive; incomplete current quarter
 COURSE_SAMPLE_END = "2025-12-31"     # original assignment window, retained as a comparison

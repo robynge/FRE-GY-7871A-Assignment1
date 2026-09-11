@@ -245,7 +245,7 @@ that the association is zero, and these associations are not causal effects.
 The requested course window is retained alongside the expanded filing window.
 Both periods use the same current active dictionary and sample definitions.
 The comparison therefore separates the date coverage from dictionary choices.
-[Course-period report](COURSE_REPORT.md) · [Course-period PDF](outputs/course_2021_2025/report.pdf).
+[Course-period report](COURSE_REPORT.md) · [Course-period PDF](outputs/course_2021_2025/ARK_Holdings_Sentiment_and_Uncertainty_Report_2025-12-31.pdf).
 """),
         code("""course_audit = json.loads((OUTPUT_DIR / 'course_2021_2025' / 'audit.json').read_text())
 comparison = pd.DataFrame([
