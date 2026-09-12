@@ -22,6 +22,8 @@ outputs/*
 !outputs/REPORT.md
 !outputs/APPENDIX.md
 !outputs/ARK_Filing_Language.xlsx
+!outputs/ARK_vs_QQQ_Note.pdf
+!outputs/ARK_vs_QQQ_NOTE.md
 !outputs/report_figures/
 !outputs/figure1.png
 
