@@ -17,9 +17,11 @@ venv/
 node_modules
 outputs/*
 !outputs/.gitkeep
-!outputs/Filing_Tone_and_Risk_Factor_Disclosure.pdf
+!outputs/ARK_Filing_Language_Report.pdf
+!outputs/ARK_Filing_Language_Appendix.pdf
 !outputs/REPORT.md
-!outputs/ARK_vs_Nasdaq100_Filing_Language.xlsx
+!outputs/APPENDIX.md
+!outputs/ARK_Filing_Language.xlsx
 !outputs/report_figures/
 !outputs/figure1.png
 

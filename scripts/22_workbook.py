@@ -24,7 +24,7 @@ ACCENT = "#8264FF"
 TINT = "#F0ECFF"
 MUTED = "#676777"
 
-RUNS = ["course_ark_2021_2025", "ark", "ndx", "ark_only", "ndx_only", "all"]
+RUNS = ["course_ark_2021_2025", "ark", "ndx", "ark_only", "ndx_only"]
 
 MEASURE_NAMES = {
     "Negative_prop": "Negative word share",
@@ -137,9 +137,11 @@ def notes_rows(audits: dict) -> pd.DataFrame:
     rows = [
         ("Filings sheet", "One row per parsed original 10-K or 10-Q, 2021 onward. "
                           "Amendments are recorded in the manifest and never scored."),
-        ("Groups", "ARK: held by one of the six ARK ETFs. NDX: a Nasdaq-100 constituent. "
-                   "BOTH: held by an ARK fund and in the index. Group comparisons that "
-                   "must not share companies use the ARK-only and NDX-only samples."),
+        ("Groups", "ARK: held by one of the six ARK ETFs. NDX: held by Invesco QQQ, the "
+                   "Nasdaq-100 constituents. BOTH: held by an ARK fund and by QQQ. The report "
+                   "describes the ARK holdings; QQQ holdings appear only in the comparison. "
+                   "Comparisons that must not share companies use the ARK-only and "
+                   "NDX-only samples."),
         ("Word shares", "Category word occurrences divided by all retained words in the "
                         "filing. Repeated words count each time. A share is a property of "
                         "the writing, not a probability of loss."),
@@ -227,10 +229,10 @@ def main() -> int:
     disclosure = OUTPUT_DIR / "all" / "disclosure"
     comparison = OUTPUT_DIR / "comparison"
 
-    target = OUTPUT_DIR / "ARK_vs_Nasdaq100_Filing_Language.xlsx"
+    target = OUTPUT_DIR / "ARK_Filing_Language.xlsx"
     book = Book(target)
 
-    ws = book.sheet("Notes", "Filing language in ARK holdings and the Nasdaq-100",
+    ws = book.sheet("Notes", "Filing language in ARK holdings, with a comparison to QQQ holdings",
                     "What each sheet contains, how each measure is defined, and what it "
                     "does not establish. Read before quoting any number.")
     book.table(ws, notes_rows(audits), widths={"Item": 26, "Definition": 118})
@@ -313,18 +315,21 @@ def main() -> int:
                     "Both columns use the identical filings, so the two slopes are "
                     "comparable. A section that grows as a share of the document raises "
                     "the whole-filing slope on its own.")
-    book.table(ws, tidy_estimates(read(comparison / "corrected_trends.csv")))
+    corrected = read(comparison / "corrected_trends.csv")
+    book.table(ws, tidy_estimates(corrected[corrected.run.ne("all")]))
 
-    ws = book.sheet("ARK vs Nasdaq100", "The two groups, tested on one pooled sample",
-                    "A difference between groups is read from an index indicator in a "
-                    "single regression, never from comparing two separate p-values. The "
-                    "test sample excludes the companies held by both.")
+    ws = book.sheet("ARK vs QQQ", "ARK holdings against QQQ holdings",
+                    "A difference between the two is read from a QQQ indicator, or its "
+                    "interaction with time or with the measure, in one regression on the "
+                    "companies held by only one of them. Never from two separate p-values.")
     row = book.table(ws, read(comparison / "levels.csv"), 3)
     ws.write(row, 0, "Difference in level and in trend", book.f["title"])
     row = book.table(ws, tidy_estimates(read(comparison / "differences.csv")), row + 1)
     ws.write(row, 0, "The same difference with Item 1A removed", book.f["title"])
     row = book.table(ws, tidy_estimates(read(comparison / "differences_excluding_item_1a.csv")),
                      row + 1)
+    ws.write(row, 0, "Difference in the volatility and return coefficients", book.f["title"])
+    row = book.table(ws, tidy_estimates(read(comparison / "outcome_differences.csv")), row + 1)
     ws.write(row, 0, "Quarterly risk-factor practice", book.f["title"])
     book.table(ws, read(comparison / "disclosure_practice.csv"), row + 1)
 
@@ -337,9 +342,10 @@ def main() -> int:
                     "Each filing-to-filing change splits exactly into the two terms. "
                     "Read the change excluding Item 1A first: the language term inherits "
                     "the high word density of a one-sentence pointer.")
-    row = book.table(ws, read(disclosure / "decomposition.csv"), 3)
-    ws.write(row, 0, "By group", book.f["title"])
-    book.table(ws, read(disclosure / "decomposition_by_group.csv"), row + 1)
+    row = 3
+    for name, label in [("ark", "ARK holdings"), ("ndx", "QQQ holdings")]:
+        ws.write(row, 0, label, book.f["title"])
+        row = book.table(ws, read(OUTPUT_DIR / name / "disclosure" / "decomposition.csv"), row + 1)
 
     events = read(disclosure / "switch_events.csv")
     if not events.empty:
@@ -354,8 +360,8 @@ def main() -> int:
                         "its risk factors, against the same form in the previous period.")
         book.table(ws, events[columns])
 
-    levels = read(OUTPUT_DIR / "report_figures" / "fig2_levels.csv")
-    slopes = read(OUTPUT_DIR / "report_figures" / "fig2_slopes.csv")
+    levels = read(OUTPUT_DIR / "report_figures" / "figB2_levels.csv")
+    slopes = read(OUTPUT_DIR / "report_figures" / "figB2_slopes.csv")
     if not levels.empty:
         firms = levels.merge(slopes, on="ticker", how="outer").sort_values("level", ascending=False)
         firms = firms.rename(columns={"ticker": "Ticker", "filing_date": "Latest 10-K filed",
@@ -370,9 +376,13 @@ def main() -> int:
     ws = book.sheet("Switch outcomes", "Market outcomes around a switch",
                     "Descriptive first, then the same regressions as the main tables with "
                     "the switch indicator as the focal variable.")
-    row = book.table(ws, read(disclosure / "switch_outcomes.csv"), 3)
-    ws.write(row, 0, "Regressions", book.f["title"])
-    book.table(ws, tidy_estimates(read(disclosure / "switch_regressions.csv")), row + 1)
+    row = 3
+    for name, label in [("ark", "ARK holdings"), ("ndx", "QQQ holdings")]:
+        folder = OUTPUT_DIR / name / "disclosure"
+        ws.write(row, 0, f"{label}: outcomes by transition", book.f["title"])
+        row = book.table(ws, read(folder / "switch_outcomes.csv"), row + 1)
+        ws.write(row, 0, f"{label}: regressions", book.f["title"])
+        row = book.table(ws, tidy_estimates(read(folder / "switch_regressions.csv")), row + 1)
 
     book.close()
     print(f"Wrote {target}")

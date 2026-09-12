@@ -30,6 +30,7 @@ from src.regressions import CONTROLS, focal_test
 
 OUT = OUTPUT_DIR / "comparison"
 SEASONS = ["season2", "season3", "season4"]
+INFERENCES = ["firm_quarter_cluster", "firm_cluster"]
 
 
 def labelled(frame: pd.DataFrame) -> pd.DataFrame:
@@ -60,20 +61,19 @@ def differences(disjoint: pd.DataFrame) -> pd.DataFrame:
     for form in ["All", "10-K", "10-Q"]:
         part = disjoint if form == "All" else disjoint[disjoint.form.eq(form)]
         for measure in MEASURES:
-            level = focal_test(part, measure, "is_ndx", SEASONS,
-                               effects=("quarter",), form=(form == "All"),
-                               model="level_difference")
-            level.update(sample=form, measure_name=measure, term="is_ndx")
-            rows.append(level)
-
             with_interaction = part.copy()
             with_interaction["ndx_x_time"] = with_interaction.is_ndx * with_interaction.time_years
-            trend = focal_test(with_interaction, measure, "ndx_x_time",
-                               ["is_ndx", "time_years"] + SEASONS,
-                               effects=("quarter",), form=(form == "All"),
-                               model="trend_difference")
-            trend.update(sample=form, measure_name=measure, term="ndx_x_time")
-            rows.append(trend)
+            for inference in INFERENCES:
+                level = focal_test(part, measure, "is_ndx", SEASONS,
+                                   effects=("quarter",), form=(form == "All"),
+                                   model="level_difference", inference=inference)
+                level.update(sample=form, measure_name=measure, term="is_ndx")
+                trend = focal_test(with_interaction, measure, "ndx_x_time",
+                                   ["is_ndx", "time_years"] + SEASONS,
+                                   effects=("quarter",), form=(form == "All"),
+                                   model="trend_difference", inference=inference)
+                trend.update(sample=form, measure_name=measure, term="ndx_x_time")
+                rows.extend([level, trend])
     return pd.DataFrame(rows)
 
 
@@ -85,23 +85,76 @@ def differences_excluding_item_1a(disjoint: pd.DataFrame, sections: pd.DataFrame
     """
     pairs = [("Negative_prop_total", "Negative_prop_body"),
              ("Uncertainty_prop_total", "Uncertainty_prop_body")]
-    columns = ["accession", "risk_found"] + [c for pair in pairs for c in pair]
+    columns = ["accession", "risk_found", "risk_share"] + [c for pair in pairs for c in pair]
     data = disjoint.merge(sections[columns], on="accession", how="inner")
     data = data[data.risk_found].copy()
+    data["ndx_x_time"] = data.is_ndx * data.time_years
+    measures = [(m, "whole filing" if m == whole else "excluding Item 1A", whole.split("_")[0])
+                for whole, body in pairs for m in (whole, body)]
+    measures.append(("risk_share", "Item 1A share of words", "Section length"))
     rows = []
     for form in ["All", "10-K", "10-Q"]:
         part = data if form == "All" else data[data.form.eq(form)]
         if part.empty:
             continue
-        for whole, body in pairs:
-            for measure in (whole, body):
-                row = focal_test(part, measure, "is_ndx", SEASONS,
-                                 effects=("quarter",), form=(form == "All"),
-                                 model="level_difference")
-                row.update(sample=form, measure_name=measure,
-                           scope="whole filing" if measure == whole else "excluding Item 1A",
-                           category=whole.split("_")[0])
-                rows.append(row)
+        for measure, scope, category in measures:
+            for inference in INFERENCES:
+                level = focal_test(part, measure, "is_ndx", SEASONS,
+                                   effects=("quarter",), form=(form == "All"),
+                                   model="level_difference", inference=inference)
+                trend = focal_test(part, measure, "ndx_x_time",
+                                   ["is_ndx", "time_years"] + SEASONS,
+                                   effects=("quarter",), form=(form == "All"),
+                                   model="trend_difference", inference=inference)
+                for row in (level, trend):
+                    row.update(sample=form, measure_name=measure, scope=scope, category=category)
+                    rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def outcome_differences(sections: pd.DataFrame) -> pd.DataFrame:
+    """Group difference in each outcome coefficient, from one regression.
+
+    The measure enters interacted with the index indicator; the interaction is
+    the QQQ-less-ARK difference in the effect of one unit of the measure. Same
+    controls, fixed effects and clustering as the outcome tests themselves.
+    """
+    body = ["accession", "risk_found", "Uncertainty_prop_total", "Uncertainty_prop_body",
+            "Negative_prop_total", "Negative_prop_body"]
+    specs = {
+        "volatility": ("volatility_sample.csv", "post_vol",
+                       ["Uncertainty_prop", "Uncertainty_tfidf"],
+                       ["Uncertainty_prop_total", "Uncertainty_prop_body"],
+                       [("volatility_without_prevol", CONTROLS),
+                        ("volatility_with_prevol", CONTROLS + ["pre_vol"])]),
+        "return": ("return_sample.csv", "event_excess",
+                   ["Negative_prop", "Negative_tfidf"],
+                   ["Negative_prop_total", "Negative_prop_body"],
+                   [("filing_return", CONTROLS + ["pre_vol"])]),
+    }
+    rows = []
+    for outcome_name, (file, outcome, whole, located_measures, models) in specs.items():
+        data = labelled(pd.read_csv(OUTPUT_DIR / "all" / file, dtype={"cik": str}))
+        data = data[data.group.isin(["ARK", "NDX"])]
+        located = data.merge(sections[body], on="accession", how="inner")
+        located = located[located.risk_found]
+        for form in ["All", "10-K", "10-Q"]:
+            for frame, measures in [(data, whole), (located, located_measures)]:
+                part = frame if form == "All" else frame[frame.form.eq(form)]
+                for measure in measures:
+                    d = part.copy()
+                    d["ndx_x_measure"] = d.is_ndx * d[measure]
+                    scope = ("all filings" if frame is data
+                             else "excluding Item 1A" if measure.endswith("body") else "whole filing")
+                    for model, controls in models:
+                        for inference in INFERENCES:
+                            row = focal_test(d, outcome, "ndx_x_measure", [measure] + controls,
+                                             form=(form == "All"), model=model, inference=inference)
+                            sd = d[measure].std()
+                            row.update(sample=form, measure_name=measure, scope=scope,
+                                       outcome=outcome_name, effect_1sd=row["coef"] * sd,
+                                       mde80_1sd=row["mde80"] * sd)
+                            rows.append(row)
     return pd.DataFrame(rows)
 
 
@@ -129,6 +182,7 @@ def main() -> int:
     differences_excluding_item_1a(disjoint, sections).to_csv(
         OUT / "differences_excluding_item_1a.csv", index=False)
     disclosure_practice(sections).to_csv(OUT / "disclosure_practice.csv", index=False)
+    outcome_differences(sections).to_csv(OUT / "outcome_differences.csv", index=False)
 
     counts = pooled.groupby("group").agg(filings=("accession", "size"),
                                          companies=("cik", "nunique"))
