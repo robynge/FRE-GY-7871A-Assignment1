@@ -9,7 +9,6 @@ The study scores every original 10-K and 10-Q filed between 1 January 2021 and 9
 - **Figures:** [outputs/report_figures/](outputs/report_figures/), with the CSVs behind the company rankings and case studies.
 - **Executed notebook:** [analysis.ipynb](analysis.ipynb), the assignment's Tables 1–6 and Figure 1 for the ARK holdings alone, executed before the index was added (93 filers).
 - **AI assistance disclosure:** [AI_USE.md](AI_USE.md).
-- [superseded/](superseded/) holds two earlier ARK-only reports, kept for the record and replaced by the report above.
 
 The analysis uses the official Loughran–McDonald Master Dictionary, 1993–2025 release, updated March 2026. Only positive category flags are included: **2,345 active negative words and 297 uncertainty words**. Negative year flags identify removed words and are excluded. Including the ten removed entries reproduces the assignment's count of 2,355; the analysis instead uses only current active entries. Dictionary proportions and equation (1) weights are computed separately for negative and uncertainty words, and equation (1) weights are refitted inside each estimation sample.
 
@@ -49,7 +48,7 @@ SEC metadata are refreshed when older than the configured retrieval date; unchan
 
 ## Earlier scripts
 
-Scripts 04, 05 and 07 build the assignment notebook and the first ARK-only report, whose Markdown is in `superseded/`. Scripts 08 to 17 are an ARK-only company-monitoring extension (declining negative language, rising uncertainty, highest current uncertainty, largest declines) that produced an Excel workbook and a Word report through Node and Pandoc; Section 3.3, Table B5 and the workbook's ARK firm ranking sheet now answer those questions on the measure excluding Item 1A. Scripts 23, 25 and 26 produced intermediate figures and a two-report draft that the single report replaced. None of these is part of the run order above.
+Scripts 04 and 05 build the assignment notebook. Scripts 08 to 17 are an ARK-only company-monitoring extension (declining negative language, rising uncertainty, highest current uncertainty, largest declines) whose questions Section 3.3, Table B5 and the workbook's ARK firm ranking sheet now answer on the measure excluding Item 1A; their spreadsheet and document outputs are not part of the deliverable. Neither is part of the run order above.
 
 ## Samples and timing
 
