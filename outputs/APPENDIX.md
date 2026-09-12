@@ -59,7 +59,7 @@ QQQ tracks the Nasdaq-100; its holdings are the 102 constituents of 9 September 
 
 ![Figure B1](report_figures/figB1_ark_whole_vs_body.png)
 
-*Figure B1. ARK quarterly reports, whole filing (solid) and excluding Item 1A (dashed), company-centred means as change since 2021 with 95% bands. The whole-filing line is flat while the line excluding Item 1A rises for negative words (Table 7).*
+*Figure B1. ARK quarterly reports, whole filing (solid) and excluding Item 1A (dashed), company-centred means as change since 2021 with 95% bands. The whole-filing line is flat while the line excluding Item 1A rises for negative words (Table 8).*
 
 ![Figure B2](report_figures/figB2_ark_firms.png)
 
@@ -83,7 +83,7 @@ QQQ tracks the Nasdaq-100; its holdings are the 102 constituents of 9 September 
 
 ![Figure B7](report_figures/figB7_distributions.png)
 
-*Figure B7. Company-mean word shares in annual reports with a located Item 1A, ARK-only against QQQ-only companies, whole filing and excluding Item 1A. Boxes span the interquartile range, whiskers the 5th to 95th percentile, dots are companies. The level rows of Table 8 test these differences.*
+*Figure B7. Company-mean word shares in annual reports with a located Item 1A, ARK-only against QQQ-only companies, whole filing and excluding Item 1A. Boxes span the interquartile range, whiskers the 5th to 95th percentile, dots are companies. The level rows of Table 9 test these differences.*
 
 ## C. Supplementary tables
 
@@ -358,7 +358,7 @@ QQQ tracks the Nasdaq-100; its holdings are the 102 constituents of 9 September 
 
 ### Table C12. QQQ less ARK: levels and trends, whole filing and excluding Item 1A
 
-*One regression per row on the disjoint sample, filings with a located Item 1A. Two-way clustered inference; Table 8 falls back to company clusters where the status column is marked.*
+*One regression per row on the disjoint sample, filings with a located Item 1A. Two-way clustered inference; Table 9 falls back to company clusters where the status column is marked.*
 
 | Report   | Measure        | Scope                  | Quantity          | QQQ less ARK   | p       | Filings   | Status                           |
 |:---------|:---------------|:-----------------------|:------------------|:---------------|:--------|:----------|:---------------------------------|

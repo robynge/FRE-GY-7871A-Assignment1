@@ -255,7 +255,10 @@ def main() -> int:
     mode_n = q_loc.risk_mode.value_counts()
     n_q = len(q_loc)
     share = {m: 100 * mode_n.get(m, 0) / n_q for m in ["full", "partial_update", "reference_only", "omitted"]}
-    words_full = q_loc[q_loc.risk_mode.eq("full")].risk_words.median()
+    restated = q_loc[q_loc.risk_mode.eq("full")]
+    words_full = restated.risk_words.median()
+    dens = {k: 100 * restated[c].mean() for k, c in [("u_in", "Uncertainty_prop_risk"), ("u_out", "Uncertainty_prop_body"),
+                                                     ("n_in", "Negative_prop_risk"), ("n_out", "Negative_prop_body")]}
     words_ref = q_loc[q_loc.risk_mode.eq("reference_only")].risk_words.median()
     risk_share_k = 100 * k_loc.risk_share.mean()
     coverage = 100 * ark_sec.risk_found.mean()
@@ -367,8 +370,8 @@ def main() -> int:
         f"fall in the uncertainty tf.idf score. In quarterly reports that score predicts the following "
         f"quarter's volatility before the prior-volatility control and weakly after it "
         f"({100 * v_qt_no.effect_1sd:+.1f} pp per standard deviation without the control, "
-        f"{100 * v_qt_with.effect_1sd:+.1f} pp with it, {p_text(v_qt_with.p)}); no other estimate in "
-        f"Table 5 is significant. Negative tone does not predict the four-session return; in quarterly "
+        f"{100 * v_qt_with.effect_1sd:+.1f} pp with it, {p_text(v_qt_with.p)}, Table 5). Negative tone "
+        f"does not predict the four-session return; in quarterly "
         f"reports the test cannot detect an effect below {100 * r_q.mde80_1sd:.1f} pp per standard "
         f"deviation (Table 6). Of the quarterly reports whose risk-factor section, Item 1A, can be located, "
         f"only {share['full']:.0f}% restate it; {share['reference_only']:.0f}% refer the reader to the "
@@ -388,7 +391,9 @@ def main() -> int:
         f"They filed {a['expected_original_filings']:,} original 10-K and 10-Q documents from January "
         f"2021 to 9 September 2026, with {a['parse_failures']} parse failures; the {a['amendments']} "
         f"amendments are never scored. Table 1 lists every filter. The volatility and return samples "
-        f"are filtered separately because a recent filing is scored before its outcome window has elapsed.")
+        f"are filtered separately because a recent filing is scored before its outcome window has elapsed. "
+        f"The assignment's window ends in 2025; the executed notebook and the data workbook hold the same "
+        f"exhibits for that window.")
     panel_a, panel_b = filters_table(d["t1u"], d["t1"])
     body.sub("Table 1. Sample filters and the filings each removed")
     body.note("Panel A. From holding identifiers to SEC filers. Absence of 10-K or 10-Q filings is read "
@@ -470,8 +475,7 @@ def main() -> int:
         f"control ({p_text(v_qt_no.p)}) and {100 * v_qt_with.effect_1sd:+.2f} pp with it "
         f"({p_text(v_qt_with.p)}); the word share moves from {100 * v_qp_no.effect_1sd:+.2f} pp "
         f"({p_text(v_qp_no.p)}) to {100 * v_qp_with.effect_1sd:+.2f} pp ({p_text(v_qp_with.p)}). The "
-        f"control removes about a quarter of each estimate, so most of the raw association is volatile "
-        f"companies writing hedged filings. Annual reports show nothing, with detectable effects of "
+        f"control removes about a quarter of each estimate. Annual reports show nothing, with detectable effects of "
         f"{v_k_mde[0]:.0f} to {v_k_mde[1]:.0f} pp. Believed weakly: {n_sig_after} of the twelve estimates "
         f"is significant after the control, at {p_text(v_qt_with.p)}, against detectable effects of "
         f"{100 * v_qt_with.mde80_1sd:.1f} pp; on the quarterly reports whose Item 1A is located, the "
@@ -496,18 +500,23 @@ def main() -> int:
     # ---------------------------------------------------------------- 6
     body.section("6. The risk-factor section")
     body.p(
-        f"A 10-Q may restate its risk factors or state that nothing material has changed since the annual "
-        f"report. Of {n_q:,} ARK quarterly reports with a located Item 1A heading ({coverage:.0f}% of "
+        f"Of {n_q:,} ARK quarterly reports with a located Item 1A heading ({coverage:.0f}% of "
         f"filings), {share['full']:.0f}% restate, {share['partial_update']:.0f}% claim no material change "
         f"but add updates, {share['reference_only']:.0f}% refer the reader to the annual report and "
         f"{share['omitted']:.0f}% disclose nothing. A restated section runs to a median of "
         f"{words_full:,.0f} words, a reference to {words_ref:.0f}; in annual reports Item 1A is "
-        f"{risk_share_k:.0f}% of all words. Because both measures are word shares, a company that stops "
-        f"restating scores lower without writing differently: across {int(to_ref_u.n)} such quarters by "
-        f"{int(to_ref_u.companies)} companies, the uncertainty share falls {abs(to_ref_u.change_pp):.2f} pp "
-        f"and the negative share {abs(to_ref_n.change_pp):.2f} pp, while the share in the rest of the "
-        f"filing moves {signed(to_ref_u.body_change_pp)} and {signed(to_ref_n.body_change_pp)} pp. Figure 2 "
-        f"shows the two largest cases; Table 7 repeats each result on the same filings without Item 1A.")
+        f"{risk_share_k:.0f}% of all words. Item 1A is the most hedged and most negative part of a filing: "
+        f"in restated sections {dens['u_in']:.1f}% of words are uncertainty words and {dens['n_in']:.1f}% "
+        f"negative words, against {dens['u_out']:.1f}% and {dens['n_out']:.1f}% in the rest of the same "
+        f"filings. A word share divides list words by all words, so replacing a {words_full / 1000:.0f},000-word "
+        f"section with a {words_ref:.0f}-word reference removes far more list words than words, and the "
+        f"whole-filing share falls although nothing else in the filing has changed. Across "
+        f"{int(to_ref_u.n)} such quarters by {int(to_ref_u.companies)} companies the uncertainty share falls "
+        f"{abs(to_ref_u.change_pp):.2f} pp and the negative share {abs(to_ref_n.change_pp):.2f} pp, while the "
+        f"share of the rest of the filing moves {signed(to_ref_u.body_change_pp)} and "
+        f"{signed(to_ref_n.body_change_pp)} pp. Figure 2 shows the two largest cases; Table 7 ranks the "
+        f"holdings on the measure excluding Item 1A; Table 8 repeats each result on the same filings without "
+        f"Item 1A.")
     body.figure(FIG / "fig2_cases.png", "Figure 2")
     body.note(
         f"Figure 2. Item 1A words (bars) and uncertainty word share of the whole filing (solid) and "
@@ -519,13 +528,25 @@ def main() -> int:
         f"({names[rise.ticker]}), "
         f"{pd.Timestamp(rise.filing_date):%B %Y}, restating after {rise_years} years, "
         f"{rise.prev_risk_words:,.0f} to {rise.risk_words:,.0f} words.")
+    high, low = levels.sort_values("level", ascending=False).head(5), levels.sort_values("level").head(5)
+    up, down = slopes.sort_values("slope", ascending=False).head(5), slopes.sort_values("slope").head(5)
+    ranking = pd.DataFrame({
+        "Rank": [str(i) for i in range(1, 6)],
+        "Most uncertain (%)": [f"{t}  {v:.2f}" for t, v in zip(high.ticker, high.level)],
+        "Least uncertain (%)": [f"{t}  {v:.2f}" for t, v in zip(low.ticker, low.level)],
+        "Largest rise (pp a year)": [f"{t}  {v:+.3f}" for t, v in zip(up.ticker, up.slope)],
+        "Largest fall (pp a year)": [f"{t}  {v:+.3f}" for t, v in zip(down.ticker, down.slope)]})
+    body.sub("Table 7. ARK holdings ranked on uncertainty words excluding Item 1A")
+    body.note(f"Level: latest annual report with a located Item 1A, {len(levels)} companies. Trend: "
+              f"within-company slope over 2021 to 2026 for the {len(slopes)} companies with at least three "
+              f"such reports; slopes rest on three to six observations and rank companies. Tickers; full "
+              f"lists in Appendix Figure B2 and Table C8.")
+    body.table(ranking)
     rows = [
         ("Annual reports: negative words, trend (pp a year)", c_kn_w, c_kn_b),
         ("Annual reports: uncertainty words, trend (pp a year)", c_ku_w, c_ku_b),
-        ("Annual reports: Item 1A share of words, trend (pp a year)", c_ks, None),
         ("Quarterly reports: negative words, trend (pp a year)", c_qn_w, c_qn_b),
         ("Quarterly reports: uncertainty words, trend (pp a year)", c_qu_w, c_qu_b),
-        ("Quarterly reports: Item 1A share of words, trend (pp a year)", c_qs, None),
     ]
     table7 = [{"Result": label, "Filings": w.n, "Whole filing": 100 * w.coef, "p": w.p,
                "Excluding Item 1A": np.nan if b is None else 100 * b.coef, "p ": np.nan if b is None else b.p}
@@ -539,8 +560,7 @@ def main() -> int:
          "Excluding Item 1A": 100 * lr_b.effect_1sd, "p ": lr_b.p}]
     table7 = show(pd.DataFrame(table7), Filings="int", **{"Whole filing": "{:+.3f}", "p": "p",
                                                           "Excluding Item 1A": "{:+.3f}", "p ": "p"})
-    table7.loc[table7.Result.str.contains("Item 1A share"), "p "] = ""
-    body.sub("Table 7. The same results on the whole filing and excluding Item 1A, identical filings")
+    body.sub("Table 8. The same results on the whole filing and excluding Item 1A, identical filings")
     body.note("Within-company trends and outcome regressions as in Tables 4 to 6, on the filings whose "
               "Item 1A heading was located. Word-share measures only.")
     body.table(table7, widths=[250, 45, 62, 45, 72, 45])
@@ -556,9 +576,9 @@ def main() -> int:
         f"({100 * lr_b.effect_1sd:+.2f} pp, {p_text(lr_b.p)}): a company that prints its risk factors "
         f"prints thousands of negative words and earns a lower return that quarter than one that refers "
         f"to the annual report; the design cannot separate that from whatever else marks those quarters. "
-        f"Ranked on uncertainty excluding Item 1A, the highest holdings by ticker are {', '.join(top_level.ticker)} "
-        f"and the lowest {', '.join(low_level.ticker)}; {', '.join(top_rise.ticker)} rise fastest over "
-        f"2021 to 2026 (Appendix Figure B2, Table C8).")
+        f"Uncertainty is highest at {', '.join(top_level.ticker)} and lowest at {', '.join(low_level.ticker)}; "
+        f"it rises fastest at {', '.join(top_rise.ticker)} and falls fastest at {', '.join(down.ticker[:3])} "
+        f"(Table 7).")
 
     # ---------------------------------------------------------------- 7
     body.section("7. Comparison with QQQ holdings")
@@ -570,13 +590,12 @@ def main() -> int:
         f"within company at {pp(q_kn.coef)} and {pp(q_ku.coef)} a year (both {p_text(q_kn.p)}); no "
         f"volatility or return estimate reaches 5% (smallest {p_text(q_min_p)}); of quarterly reports with "
         f"a located Item 1A, {share_q['full']:.0f}% restate risk factors and {share_q['reference_only']:.0f}% "
-        f"refer to the annual report. Table 8 tests each difference in one regression on the companies "
+        f"refer to the annual report. Table 9 tests each difference in one regression on the companies "
         f"held by only one portfolio, whole filing and excluding Item 1A on identical filings; "
         f"Appendix Figure B7 shows the company-level distributions behind the level rows.")
     rows = [
         ("Annual reports: negative words, level (pp)", lvl_kn_w, lvl_kn_b),
         ("Annual reports: uncertainty words, level (pp)", lvl_ku_w, lvl_ku_b),
-        ("Annual reports: Item 1A share of words, level (pp)", lvl_ks, None),
         ("Annual reports: negative words, trend (pp a year)", trd_kn_w, trd_kn_b),
         ("Annual reports: uncertainty words, trend (pp a year)", trd_ku_w, trd_ku_b),
     ]
@@ -596,7 +615,7 @@ def main() -> int:
     table8 = show(pd.DataFrame(table8), Filings="int", **{"Whole filing": "{:+.3f}"})
     fallback = any(r[1] for r in [lvl_kn_w, lvl_kn_b, lvl_ku_w, lvl_ku_b, lvl_ks, trd_kn_w, trd_kn_b,
                                   trd_ku_w, trd_ku_b, ret_w, ret_b, vol_w, vol_b, kvol_w, kvol_b])
-    body.sub("Table 8. QQQ holdings less ARK holdings")
+    body.sub("Table 9. QQQ holdings less ARK holdings")
     body.note("Coefficient on a QQQ indicator (levels), on its interaction with time (trends) or with the "
               "measure (outcomes) in one regression on the companies held by only one portfolio. Level "
               "differences with calendar-quarter effects; outcome differences with the controls of Tables "
@@ -623,9 +642,8 @@ def main() -> int:
         f"excluding Item 1A ({100 * kvol_b[0].effect_1sd:+.1f} pp, {p_text(kvol_b[0].p)}).")
 
     body.link("Loughran, T., and B. McDonald, 2011, When is a liability not a liability? Textual analysis, "
-              "dictionaries, and 10-Ks, Journal of Finance 66, 35-65.",
-              "https://doi.org/10.1111/j.1540-6261.2010.01625.x")
-    body.link("Code, executed notebook, tests and the data workbook.",
+              "dictionaries, and 10-Ks, Journal of Finance 66, 35-65. Code, executed notebook, tests and the "
+              "data workbook: github.com/robynge/FRE-GY-7871A-Assignment1",
               "https://github.com/robynge/FRE-GY-7871A-Assignment1")
 
     # =============================================================== APPENDIX
@@ -727,7 +745,7 @@ def main() -> int:
     app.figure(FIG / "figB1_ark_whole_vs_body.png", "Figure B1")
     app.note("Figure B1. ARK quarterly reports, whole filing (solid) and excluding Item 1A (dashed), "
              "company-centred means as change since 2021 with 95% bands. The whole-filing line is flat while "
-             "the line excluding Item 1A rises for negative words (Table 7).")
+             "the line excluding Item 1A rises for negative words (Table 8).")
     app.figure(FIG / "figB2_ark_firms.png", "Figure B2")
     app.note(f"Figure B2. ARK holdings ranked on uncertainty words excluding Item 1A. Left: latest annual "
              f"report with a located Item 1A, 15 lowest and 15 highest of {len(levels)} companies; dashed "
@@ -754,7 +772,7 @@ def main() -> int:
     app.figure(FIG / "figB7_distributions.png", "Figure B7")
     app.note("Figure B7. Company-mean word shares in annual reports with a located Item 1A, ARK-only "
              "against QQQ-only companies, whole filing and excluding Item 1A. Boxes span the interquartile "
-             "range, whiskers the 5th to 95th percentile, dots are companies. The level rows of Table 8 "
+             "range, whiskers the 5th to 95th percentile, dots are companies. The level rows of Table 9 "
              "test these differences.")
 
     app.page_break()
@@ -862,7 +880,7 @@ def main() -> int:
                         "Status": dxx.status.map(lambda s: "" if s == "ok" else "covariance not positive definite")})
     app.sub("Table C12. QQQ less ARK: levels and trends, whole filing and excluding Item 1A")
     app.note("One regression per row on the disjoint sample, filings with a located Item 1A. Two-way clustered "
-             "inference; Table 8 falls back to company clusters where the status column is marked.")
+             "inference; Table 9 falls back to company clusters where the status column is marked.")
     app.table(show(c12, **{"QQQ less ARK": "{:+.4f}", "p": "p", "Filings": "int"}), keep_together=False)
 
     odx = od[od.inference.eq("firm_quarter_cluster")]

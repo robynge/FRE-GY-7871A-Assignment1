@@ -101,7 +101,7 @@ def band_line(ax, table: pd.DataFrame, colour: str, ls="-", marker="o", hollow=F
 # ------------------------------------------------- Figure 1: ARK series and VIX
 def figure_1(d: dict) -> None:
     ark = in_group(d["text"], "ARK")
-    fig = plt.figure(figsize=(WIDTH, 4.1), constrained_layout=True)
+    fig = plt.figure(figsize=(WIDTH, 3.8), constrained_layout=True)
     grid = fig.add_gridspec(3, 2, height_ratios=[3, 3, 1.1])
     for row, measure in enumerate(["Negative_prop", "Uncertainty_prop"]):
         for col, form in enumerate(["10-K", "10-Q"]):
@@ -141,7 +141,7 @@ def figure_2(d: dict) -> pd.DataFrame:
         ["ticker", "filing_date", "prev_risk_words", "risk_words", "risk_words_change", "transition"]]
     selected.to_csv(OUT / "fig2_selected.csv", index=False)
 
-    fig, axes = create_subplots(1, 2, figsize=(WIDTH, 2.7), constrained_layout=True)
+    fig, axes = create_subplots(1, 2, figsize=(WIDTH, 2.3), constrained_layout=True)
     for ax, event, caption, note in zip(
             axes, [biggest_drop, biggest_rise],
             ["Largest single-quarter fall in Item 1A words", "Largest single-quarter rise in Item 1A words"],
