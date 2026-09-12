@@ -378,8 +378,9 @@ def main() -> int:
         f"annual report, and that choice moves a word-share measure by itself. "
         f"Excluding Item 1A cuts the annual-report trends by {100 * min(cut_n, cut_u):.0f}% to "
         f"{100 * max(cut_n, cut_u):.0f}% and removes the one return association in the data (Section 6). "
-        f"QQQ holdings carry fewer negative and uncertainty words in their annual reports; outside Item 1A "
-        f"the two portfolios write alike (Section 7).")
+        f"QQQ holdings carry fewer negative and uncertainty words in their annual reports; the gap is the "
+        f"length of their risk sections, and outside Item 1A the two portfolios write alike except that "
+        f"ARK's negative tone rises faster (Section 7).")
 
     # ---------------------------------------------------------------- 1
     body.section("1. Sample")
@@ -586,9 +587,10 @@ def main() -> int:
         f"The same pipeline was run on the {a_q['final_companies']} SEC filers among the QQQ (Nasdaq-100) "
         f"constituents of 9 September 2026, {a_q['expected_original_filings']:,} filings, {n_both} of the "
         f"companies being in both portfolios (Appendix Tables C4 to C7). QQQ annual reports average "
-        f"{lm_k['ndx'][0]:.2f}% negative and {lm_k['ndx'][1]:.2f}% uncertainty words and trend upward "
-        f"within company at {pp(q_kn.coef)} and {pp(q_ku.coef)} a year (both {p_text(q_kn.p)}); no "
-        f"volatility or return estimate reaches 5% (smallest {p_text(q_min_p)}); of quarterly reports with "
+        f"{lm_k['ndx'][0]:.2f}% negative and {lm_k['ndx'][1]:.2f}% uncertainty words against ARK's "
+        f"{lm_k['ark'][0]:.2f}% and {lm_k['ark'][1]:.2f}% (Table 2), and they trend upward within company "
+        f"at {pp(q_kn.coef)} and {pp(q_ku.coef)} a year (both {p_text(q_kn.p)}), as ARK's do. No QQQ "
+        f"volatility or return estimate reaches 5% (smallest {p_text(q_min_p)}). Of quarterly reports with "
         f"a located Item 1A, {share_q['full']:.0f}% restate risk factors and {share_q['reference_only']:.0f}% "
         f"refer to the annual report. Table 9 tests each difference in one regression on the companies "
         f"held by only one portfolio, whole filing and excluding Item 1A on identical filings; "
@@ -624,22 +626,26 @@ def main() -> int:
                  if fallback else ""))
     body.table(table8, widths=[250, 45, 62, 45, 72, 45])
     body.p(
-        f"Believed: the difference between the portfolios is how much risk disclosure they print. QQQ "
-        f"annual reports carry {abs(100 * lvl_kn_w[0].coef):.2f} pp fewer negative and "
-        f"{abs(100 * lvl_ku_w[0].coef):.2f} pp fewer uncertainty words on the whole filing "
-        f"({p_text(lvl_kn_w[0].p)}, {p_text(lvl_ku_w[0].p)}), and Item 1A takes {abs(100 * lvl_ks[0].coef):.1f} pp "
-        f"less of their words ({risk_share_k_q:.0f}% against {risk_share_k:.0f}%); excluding "
-        f"the section the gaps are {abs(100 * lvl_kn_b[0].coef):.3f} pp ({p_text(lvl_kn_b[0].p)}) and "
-        f"{abs(100 * lvl_ku_b[0].coef):.3f} pp ({p_text(lvl_ku_b[0].p)}). ARK's annual-report trends "
-        f"are steeper: by {abs(100 * trd_ku_w[0].coef):.3f} pp a year for uncertainty on the whole filing "
-        f"({p_text(trd_ku_w[0].p)}) and by {abs(100 * trd_kn_b[0].coef):.3f} pp a year for negative words "
-        f"outside Item 1A ({p_text(trd_kn_b[0].p)}). The whole-filing return association differs between "
-        f"the portfolios ({100 * ret_w[0].effect_1sd:+.1f} pp per standard deviation, "
-        f"{p_text(ret_w[0].p)}) and not once Item 1A is removed ({100 * ret_b[0].effect_1sd:+.1f} pp, "
-        f"{p_text(ret_b[0].p)}). In quarterly reports the volatility coefficients do not differ "
-        f"({p_text(vol_w[0].p)}, {p_text(vol_b[0].p)}); in annual reports they differ on the whole filing "
+        f"Believed: on the raw scores ARK holdings read more negative and more uncertain than QQQ "
+        f"holdings, and the whole of that gap is how much risk-factor text they print. QQQ annual reports "
+        f"carry {abs(100 * lvl_kn_w[0].coef):.2f} pp fewer negative and {abs(100 * lvl_ku_w[0].coef):.2f} pp "
+        f"fewer uncertainty words on the whole filing ({p_text(lvl_kn_w[0].p)}, {p_text(lvl_ku_w[0].p)}); "
+        f"Item 1A takes {risk_share_k_q:.0f}% of their words against {risk_share_k:.0f}% of ARK's "
+        f"(difference {abs(100 * lvl_ks[0].coef):.1f} pp, {p_text(lvl_ks[0].p)}); excluding the section the "
+        f"gaps are {abs(100 * lvl_kn_b[0].coef):.3f} pp ({p_text(lvl_kn_b[0].p)}) and "
+        f"{abs(100 * lvl_ku_b[0].coef):.3f} pp ({p_text(lvl_ku_b[0].p)}), and the two distributions in "
+        f"Figure B7 overlap. The negative-tone return association of Section 6 belongs to ARK alone: QQQ "
+        f"shows none, the difference is significant on the whole filing ({100 * ret_w[0].effect_1sd:+.1f} pp "
+        f"per standard deviation, {p_text(ret_w[0].p)}) and gone excluding Item 1A "
+        f"({100 * ret_b[0].effect_1sd:+.1f} pp, {p_text(ret_b[0].p)}), a disclosure effect rather than a "
+        f"tone effect. The volatility coefficients do not differ in quarterly reports ({p_text(vol_w[0].p)}, "
+        f"{p_text(vol_b[0].p)}); in annual reports they differ on the whole filing "
         f"({100 * kvol_w[0].effect_1sd:+.1f} pp per standard deviation, {p_text(kvol_w[0].p)}) and not "
-        f"excluding Item 1A ({100 * kvol_b[0].effect_1sd:+.1f} pp, {p_text(kvol_b[0].p)}).")
+        f"excluding Item 1A ({p_text(kvol_b[0].p)}). One difference survives the correction: ARK's negative "
+        f"tone outside Item 1A rises faster, by {abs(100 * trd_kn_b[0].coef):.3f} pp a year "
+        f"({p_text(trd_kn_b[0].p)}); its uncertainty trend is steeper only on the whole filing "
+        f"({abs(100 * trd_ku_w[0].coef):.3f} pp a year, {p_text(trd_ku_w[0].p)}). Compared on the measure "
+        f"excluding Item 1A, the two portfolios differ in that one trend and in nothing else.")
 
     body.link("Loughran, T., and B. McDonald, 2011, When is a liability not a liability? Textual analysis, "
               "dictionaries, and 10-Ks, Journal of Finance 66, 35-65. Code, executed notebook, tests and the "
