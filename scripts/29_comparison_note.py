@@ -135,6 +135,18 @@ def main() -> int:
         f"factors even if it writes the same way.")
 
     note.section("Levels: ARK reads more negative and more uncertain, and the gap is disclosure length")
+    note.p(
+        f"On the whole filing, QQQ annual reports carry {abs(100 * lv[('Negative', 'whole filing')][0].coef):.2f} pp "
+        f"fewer negative words and {abs(100 * lv[('Uncertainty', 'whole filing')][0].coef):.2f} pp fewer uncertainty "
+        f"words than ARK annual reports, both well inside 5%. Item 1A takes {risk_share['ndx']:.0f}% of a QQQ "
+        f"annual report's words against {risk_share['ark']:.0f}% of an ARK one. Remove that section from the "
+        f"same filings and the gaps are {abs(100 * lv[('Negative', 'excluding Item 1A')][0].coef):.3f} pp "
+        f"({p_text(lv[('Negative', 'excluding Item 1A')][0].p)}) and "
+        f"{abs(100 * lv[('Uncertainty', 'excluding Item 1A')][0].coef):.3f} pp "
+        f"({p_text(lv[('Uncertainty', 'excluding Item 1A')][0].p)}). Figure 1 shows the company-level "
+        f"distributions: the boxes separate on the whole filing and sit on top of each other without Item 1A. "
+        f"The difference between the two portfolios is how much risk disclosure their companies print, not how "
+        f"they write the rest of the document.")
     rows = [
         {"Measure, annual reports": "Negative words (% of words)", "ARK holdings": f"{k_mean['ark'][0]:.2f}", "QQQ holdings": f"{k_mean['ndx'][0]:.2f}",
          "QQQ less ARK, whole filing (pp)": cell(100 * lv[('Negative', 'whole filing')][0].coef, lv[('Negative', 'whole filing')][0].p, lv[('Negative', 'whole filing')][1]),
@@ -151,24 +163,23 @@ def main() -> int:
               f"companies held by only one portfolio, calendar-quarter and seasonal effects, two-way clustered "
               f"inference; p-values in brackets.")
     note.table(pd.DataFrame(rows))
-    note.p(
-        f"On the whole filing, QQQ annual reports carry {abs(100 * lv[('Negative', 'whole filing')][0].coef):.2f} pp "
-        f"fewer negative words and {abs(100 * lv[('Uncertainty', 'whole filing')][0].coef):.2f} pp fewer uncertainty "
-        f"words than ARK annual reports, both well inside 5%. Item 1A takes {risk_share['ndx']:.0f}% of a QQQ "
-        f"annual report's words against {risk_share['ark']:.0f}% of an ARK one. Remove that section from the "
-        f"same filings and the gaps are {abs(100 * lv[('Negative', 'excluding Item 1A')][0].coef):.3f} pp "
-        f"({p_text(lv[('Negative', 'excluding Item 1A')][0].p)}) and "
-        f"{abs(100 * lv[('Uncertainty', 'excluding Item 1A')][0].coef):.3f} pp "
-        f"({p_text(lv[('Uncertainty', 'excluding Item 1A')][0].p)}). Figure 1 shows the company-level "
-        f"distributions: the boxes separate on the whole filing and sit on top of each other without Item 1A. "
-        f"The difference between the two portfolios is how much risk disclosure their companies print, not how "
-        f"they write the rest of the document.")
     note.figure(FIG / "figB7_distributions.png", "Figure 1")
     note.note("Figure 1. Company-mean word shares in annual reports with a located Item 1A, companies held only "
               "by ARK against companies held only by QQQ, whole filing and excluding Item 1A. Boxes span the "
               "interquartile range, whiskers the 5th to 95th percentile, dots are companies.")
 
     note.section("Trends: both rise; one difference survives the correction")
+    note.p(
+        f"Negative and uncertainty language rises within company in both portfolios, on the whole filing and "
+        f"outside Item 1A, all at {p_text(T('ark', 'Negative', 'whole filing').p)}. ARK's slopes are steeper. On "
+        f"the whole filing the uncertainty difference is significant ({abs(100 * td[('Uncertainty', 'whole filing')][0].coef):.3f} pp "
+        f"a year, {p_text(td[('Uncertainty', 'whole filing')][0].p)}) and the negative one is not "
+        f"({p_text(td[('Negative', 'whole filing')][0].p)}); outside Item 1A it is the other way round: ARK's "
+        f"negative tone rises {abs(100 * td[('Negative', 'excluding Item 1A')][0].coef):.3f} pp a year faster "
+        f"({p_text(td[('Negative', 'excluding Item 1A')][0].p)}) and the uncertainty difference is "
+        f"{abs(100 * td[('Uncertainty', 'excluding Item 1A')][0].coef):.3f} pp ({p_text(td[('Uncertainty', 'excluding Item 1A')][0].p)}). "
+        f"That faster rise in negative words outside the risk section is the one difference between the "
+        f"portfolios that does not go away when Item 1A is removed. Figure 2 shows the series.")
     rows = []
     for cat in ["Negative", "Uncertainty"]:
         rows.append({"Measure, annual reports": f"{cat} words, pp a year",
@@ -185,39 +196,11 @@ def main() -> int:
               "elapsed years, one regression on the disjoint sample."
               + (" * Company-clustered inference where the two-way clustered covariance was not positive definite." if fallback else ""))
     note.table(pd.DataFrame(rows), keep_together=True)
-    note.p(
-        f"Negative and uncertainty language rises within company in both portfolios, on the whole filing and "
-        f"outside Item 1A, all at {p_text(T('ark', 'Negative', 'whole filing').p)}. ARK's slopes are steeper. On "
-        f"the whole filing the uncertainty difference is significant ({abs(100 * td[('Uncertainty', 'whole filing')][0].coef):.3f} pp "
-        f"a year, {p_text(td[('Uncertainty', 'whole filing')][0].p)}) and the negative one is not "
-        f"({p_text(td[('Negative', 'whole filing')][0].p)}); outside Item 1A it is the other way round: ARK's "
-        f"negative tone rises {abs(100 * td[('Negative', 'excluding Item 1A')][0].coef):.3f} pp a year faster "
-        f"({p_text(td[('Negative', 'excluding Item 1A')][0].p)}) and the uncertainty difference is "
-        f"{abs(100 * td[('Uncertainty', 'excluding Item 1A')][0].coef):.3f} pp ({p_text(td[('Uncertainty', 'excluding Item 1A')][0].p)}). "
-        f"That faster rise in negative words outside the risk section is the one difference between the "
-        f"portfolios that does not go away when Item 1A is removed. Figure 2 shows the series.")
     note.figure(FIG / "figB6_groups_series.png", "Figure 2")
     note.note("Figure 2. Both measures by quarter, ARK holdings and QQQ holdings (each including the shared "
               "companies), company-centred means with 95% bands; annual reports by filing year.")
 
     note.section("Market outcomes: the return association belongs to ARK, and to its risk section")
-    rows = []
-    for label_, form, measure, spec, outcome in outcomes:
-        cells = {"Test": label_}
-        for scope, suffix in [("whole filing", "total"), ("excluding Item 1A", "body")]:
-            a, b_ = S("ark", form, f"{measure}_{suffix}", spec), S("ndx", form, f"{measure}_{suffix}", spec)
-            d_, fb = OD(outcome, form, f"{measure}_{suffix}", spec)
-            cells[f"ARK, {scope}"] = f"{100 * a.effect_1sd:+.2f} ({p_short(a.p)})"
-            cells[f"QQQ, {scope}"] = f"{100 * b_.effect_1sd:+.2f} ({p_short(b_.p)})"
-            cells[f"QQQ less ARK, {scope}"] = cell(100 * d_.effect_1sd, d_.p, fb, 2)
-        rows.append(cells)
-    note.sub("Table 3. Effect per standard deviation of the word share, percentage points")
-    note.note("Portfolio columns: each portfolio's own regression on its filings with a located Item 1A and "
-              "complete market data, company and calendar-quarter effects, size, dollar volume, prior excess "
-              "return and prior volatility as controls. Difference columns: interaction of the measure with a "
-              "QQQ indicator on the disjoint sample. Effects per standard deviation of the measure in the "
-              "estimation sample, so the difference is not the arithmetic gap between the two portfolio columns.")
-    note.table(pd.DataFrame(rows), keep_together=True)
     ret_a, ret_q = S("ark", "10-Q", "Negative_prop_total", "filing_return"), S("ndx", "10-Q", "Negative_prop_total", "filing_return")
     ret_ab, ret_d, ret_db = S("ark", "10-Q", "Negative_prop_body", "filing_return"), OD("return", "10-Q", "Negative_prop_total", "filing_return"), OD("return", "10-Q", "Negative_prop_body", "filing_return")
     vq, vqb = OD("volatility", "10-Q", "Uncertainty_prop_total", "volatility_with_prevol"), OD("volatility", "10-Q", "Uncertainty_prop_body", "volatility_with_prevol")
@@ -236,6 +219,23 @@ def main() -> int:
         f"differ between the portfolios in quarterly reports ({p_text(vq[0].p)}, {p_text(vqb[0].p)}); in annual "
         f"reports the coefficients differ on the whole filing ({100 * vk[0].effect_1sd:+.1f} pp, {p_text(vk[0].p)}) "
         f"and not excluding Item 1A ({p_text(vkb[0].p)}), the same pattern.")
+    rows = []
+    for label_, form, measure, spec, outcome in outcomes:
+        cells = {"Test": label_}
+        for scope, suffix in [("whole filing", "total"), ("excluding Item 1A", "body")]:
+            a, b_ = S("ark", form, f"{measure}_{suffix}", spec), S("ndx", form, f"{measure}_{suffix}", spec)
+            d_, fb = OD(outcome, form, f"{measure}_{suffix}", spec)
+            cells[f"ARK, {scope}"] = f"{100 * a.effect_1sd:+.2f} ({p_short(a.p)})"
+            cells[f"QQQ, {scope}"] = f"{100 * b_.effect_1sd:+.2f} ({p_short(b_.p)})"
+            cells[f"QQQ less ARK, {scope}"] = cell(100 * d_.effect_1sd, d_.p, fb, 2)
+        rows.append(cells)
+    note.sub("Table 3. Effect per standard deviation of the word share, percentage points")
+    note.note("Portfolio columns: each portfolio's own regression on its filings with a located Item 1A and "
+              "complete market data, company and calendar-quarter effects, size, dollar volume, prior excess "
+              "return and prior volatility as controls. Difference columns: interaction of the measure with a "
+              "QQQ indicator on the disjoint sample. Effects per standard deviation of the measure in the "
+              "estimation sample, so the difference is not the arithmetic gap between the two portfolio columns.")
+    note.table(pd.DataFrame(rows), keep_together=True)
 
     note.section("Disclosure practice: the two portfolios behave alike")
     rows = [
